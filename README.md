@@ -3,7 +3,7 @@
 [![CUDA](https://img.shields.io/badge/CUDA-11.8%20%7C%2012.x-green.svg)](https://developer.nvidia.com/cuda-toolkit)
 [![Hardware](https://img.shields.io/badge/Hardware-NVIDIA%20Tesla%20T4%20(TU104)-76B900.svg)](https://www.nvidia.com/en-us/data-center/tesla-t4/)
 [![Compute Capability](https://img.shields.io/badge/Compute%20Capability-7.5-blue.svg)](https://developer.nvidia.com/cuda-gpus)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
 An extreme, microarchitecturally-optimized CUDA C++ and PTX assembly kernel suite custom-tailored for **NVIDIA Tesla T4 GPUs** (Turing CC 7.5, TU104 die, 40 SMs, 320 Tensor Cores, 70W TDP).
 
@@ -89,4 +89,4 @@ nvcc -O3 -arch=sm_75 -c research/src/t4_cuda_kernels.cu -o t4_cuda_kernels.o
 
 ## License
 
-This project is released under the **MIT License**. See [LICENSE](LICENSE) for details.
+This project is released under the **Apache License 2.0**. See [LICENSE](LICENSE) for details.

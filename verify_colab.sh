@@ -76,6 +76,10 @@ print('>> [GPU STRESS TEST] Completed 4096x4096 dequantization without crashes. 
 "
 
 echo ""
+echo "--> [6/6] Running Fused W4A16 GEMM Accuracy & Performance Verification..."
+python3 harness/verify_fused_gemm.py
+
+echo ""
 echo "=========================================================================="
 echo "  [ALL VERIFICATIONS PASSED SUCCESSFULLY]"
 echo "=========================================================================="

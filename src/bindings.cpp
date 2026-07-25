@@ -57,7 +57,81 @@ torch::Tensor dequantize_lop3_s4_cuda(
     return output;
 }
 
+#include "kernels/fused_w4a16_gemm.h"
+
+torch::Tensor fused_w4a16_gemm_u4_cuda(
+    torch::Tensor A,
+    torch::Tensor W_packed,
+    torch::Tensor scales,
+    torch::Tensor zero_points)
+{
+    TORCH_CHECK(A.is_cuda(), "A must be a CUDA tensor");
+    TORCH_CHECK(W_packed.is_cuda(), "W_packed must be a CUDA tensor");
+    TORCH_CHECK(scales.is_cuda(), "scales must be a CUDA tensor");
+    TORCH_CHECK(zero_points.is_cuda(), "zero_points must be a CUDA tensor");
+
+    TORCH_CHECK(A.scalar_type() == torch::kHalf, "A must be FP16");
+    TORCH_CHECK(W_packed.scalar_type() == torch::kInt32, "W_packed must be Int32");
+
+    int M = A.size(0);
+    int K = A.size(1);
+    int N = W_packed.size(1);
+
+    auto options = torch::TensorOptions().dtype(torch::kHalf).device(A.device());
+    torch::Tensor C = torch::empty({M, N}, options);
+
+    cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
+
+    launch_fused_w4a16_gemm_u4(
+        reinterpret_cast<const half*>(A.data_ptr<at::Half>()),
+        reinterpret_cast<const uint32_t*>(W_packed.data_ptr<int32_t>()),
+        reinterpret_cast<const half*>(scales.data_ptr<at::Half>()),
+        reinterpret_cast<const half*>(zero_points.data_ptr<at::Half>()),
+        reinterpret_cast<half*>(C.data_ptr<at::Half>()),
+        M, N, K,
+        stream);
+
+    return C;
+}
+
+torch::Tensor fused_w4a16_gemm_s4_cuda(
+    torch::Tensor A,
+    torch::Tensor W_packed,
+    torch::Tensor scales,
+    torch::Tensor zero_points)
+{
+    TORCH_CHECK(A.is_cuda(), "A must be a CUDA tensor");
+    TORCH_CHECK(W_packed.is_cuda(), "W_packed must be a CUDA tensor");
+    TORCH_CHECK(scales.is_cuda(), "scales must be a CUDA tensor");
+    TORCH_CHECK(zero_points.is_cuda(), "zero_points must be a CUDA tensor");
+
+    TORCH_CHECK(A.scalar_type() == torch::kHalf, "A must be FP16");
+    TORCH_CHECK(W_packed.scalar_type() == torch::kInt32, "W_packed must be Int32");
+
+    int M = A.size(0);
+    int K = A.size(1);
+    int N = W_packed.size(1);
+
+    auto options = torch::TensorOptions().dtype(torch::kHalf).device(A.device());
+    torch::Tensor C = torch::empty({M, N}, options);
+
+    cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
+
+    launch_fused_w4a16_gemm_s4(
+        reinterpret_cast<const half*>(A.data_ptr<at::Half>()),
+        reinterpret_cast<const uint32_t*>(W_packed.data_ptr<int32_t>()),
+        reinterpret_cast<const half*>(scales.data_ptr<at::Half>()),
+        reinterpret_cast<const half*>(zero_points.data_ptr<at::Half>()),
+        reinterpret_cast<half*>(C.data_ptr<at::Half>()),
+        M, N, K,
+        stream);
+
+    return C;
+}
+
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     m.def("dequantize_u4", &dequantize_lop3_u4_cuda, "LOP3 Fast Unsigned INT4 Dequantization (CUDA)");
     m.def("dequantize_s4", &dequantize_lop3_s4_cuda, "LOP3 Fast Signed INT4 Dequantization (CUDA)");
+    m.def("fused_w4a16_gemm_u4", &fused_w4a16_gemm_u4_cuda, "Fused Unsigned W4A16 GEMM with LOP3 0xEA Dequant (CUDA)");
+    m.def("fused_w4a16_gemm_s4", &fused_w4a16_gemm_s4_cuda, "Fused Signed S4A16 GEMM with LOP3 0x6A Dequant (CUDA)");
 }

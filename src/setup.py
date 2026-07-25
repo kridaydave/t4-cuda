@@ -13,6 +13,7 @@ setup(
             sources=[
                 os.path.join(src_dir, 'bindings.cpp'),
                 os.path.join(src_dir, 'kernels/lop3_dequant.cu'),
+                os.path.join(src_dir, 'kernels/fused_w4a16_gemm.cu'),
             ],
             extra_compile_args={
                 'cxx': ['-O3'],

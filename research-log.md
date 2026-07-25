@@ -14,7 +14,7 @@
 ## [2026-07-24] Multi-Pass Verification & Novel Discovery Phase
 
 ### Verified Novelties:
-1. `lop3.b32` Signed INT4 Two's Complement Unpacking (LUT `0x78` - Single cycle sign flip).
+1. `lop3.b32` Signed INT4 Two's Complement Unpacking (LUT `0x6A` - Single cycle sign flip).
 2. `PRMT` + `LOP3` Multi-Word Vector Load Remapping (50% instruction reduction).
 3. Zero-Overhead Inline Register Activation Fusion (SiLU / GELU).
 4. Turing INT8 Tensor Core Matrix Layouts (`mma.sync.aligned.m8n8k16` - 130.2 TOPS).
@@ -42,7 +42,7 @@
 ## [2026-07-24] ULTRA-DEEP PTX Assembly & Empirical Micro-Benchmarking Phase
 
 ### Completed Assembly & Benchmark Artifacts:
-1. **`ptx_sass_assembly_deep_dive.md`** & **`t4_ptx_assembly_suite.cu`**: LOP3 truth tables (`0x78`, `0x64006400`, `0xE2`, `0xF2`), `ldmatrix` trans/non-trans, `mma.sync`, Uniform Registers (`UR0-UR63`).
+1. **`ptx_sass_assembly_deep_dive.md`** & **`t4_ptx_assembly_suite.cu`**: LOP3 truth tables (`0x6A`, `0x64006400`, `0xE2`, `0xF2`), `ldmatrix` trans/non-trans, `mma.sync`, Uniform Registers (`UR0-UR63`).
 2. **`t4_hardware_benchmarking_report.md`** & **`t4_microbenchmarks.cu`**: Latencies (L1 ~30 cycles, L2 ~200 cycles, DRAM ~450 cycles), 32-way SMEM bank conflict stalls, NVPM clock decay curves.
 
 ---

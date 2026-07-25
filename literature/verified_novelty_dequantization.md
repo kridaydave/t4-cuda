@@ -6,7 +6,7 @@ This document presents a microarchitectural analysis of sub-byte weight dequanti
 
 Through microarchitectural modeling covering SASS pipeline execution, register file constraints, memory bank hazards, IEEE 754 precision limits, and Turing hardware specifications, we analyze sub-byte weight unpacking and evaluate four key instruction-level techniques:
 
-1. **Signed INT4 Dequantization (`lop3.b32` LUT `0x78`)**: A single-cycle PTX technique that simultaneously extracts 4-bit nibbles, inserts the IEEE 754 FP16 magic exponent (`0x6400`), and inverts sign bit 3 to convert two's complement $s4 \in [-8, 7]$ directly into FP16 biased mantissas.
+1. **Signed INT4 Dequantization (`lop3.b32` LUT `0x6A`)**: A single-cycle PTX technique that simultaneously extracts 4-bit nibbles, inserts the IEEE 754 FP16 magic exponent (`0x6400`), and inverts sign bit 3 to convert two's complement $s4 \in [-8, 7]$ directly into FP16 biased mantissas.
 2. **Unsigned INT4 Magic Exponent Insertion (`0x64006400`)**: Adapting established FP16 magic-number insertion to bypass integer-to-float conversion pipelines.
 3. **Dual-Word `PRMT` + `LOP3` Inter-Register Packing**: Utilizing byte-remapping (`prmt.b32`) to unpack 64-bit (`LDG.E.64`) memory words into registers.
 4. **Inline Register Activation Fusion (SiLU/GELU)**: Interleaving FP16 ALU (`HFMA2`, `HADD2`) and Multi-Function Unit (`MUFU.EX2`, `MUFU.RCP`) pipelines to execute epilogue activations directly in registers.
@@ -19,7 +19,7 @@ Additionally, this document corrects an indexing oversight in prior literature r
 
 To maintain strict academic and technical accuracy, we explicitly contextualize these techniques relative to existing open-source inference engines and literature:
 
-- **FP16 Magic Exponent Insertion (`0x64006400`)**: The technique of extracting 4-bit nibbles into FP16 mantissas using `lop3.b32` with magic exponent `0x6400` is **established prior art**, utilized in production by **ExLlama / ExLlamaV2**, **Marlin** (IST-DASLab), **AWQ**, and **GPTQ-for-LLaMa**. Our formulation applies this established concept to Turing CC 7.5 and extends it to signed two's complement ($s4$) via LUT `0x78`.
+- **FP16 Magic Exponent Insertion (`0x64006400`)**: The technique of extracting 4-bit nibbles into FP16 mantissas using `lop3.b32` with magic exponent `0x6400` is **established prior art**, utilized in production by **ExLlama / ExLlamaV2**, **Marlin** (IST-DASLab), **AWQ**, and **GPTQ-for-LLaMa**. Our formulation applies this established concept to Turing CC 7.5 and extends it to signed two's complement ($s4$) via LUT `0x6A`.
 - **Byte Permutation (`PRMT`)**: Using `prmt.b32` for byte reorganization in dequantization loops is a known instruction-scheduling optimization in CUDA kernel development.
 - **Epilogue Activation Fusion**: Fusing activation functions (SiLU/GELU) into GEMM epilogues is a standard practice implemented in **CUTLASS** and **cuBLAS**.
 
@@ -66,7 +66,7 @@ Each element is separated by a stride of 4, which aligns naturally with warp-lev
 
 ---
 
-### 1.3 Signed INT4 Two's Complement ($s4 \in [-8, 7]$) via `lop3.b32` LUT `0x78`
+### 1.3 Signed INT4 Two's Complement ($s4 \in [-8, 7]$) via `lop3.b32` LUT `0x6A`
 
 For Signed INT4 stored in Two's Complement format ($s4 \in [-8, 7]$), bit 3 represents the sign bit. Adding 8 to $s4$ produces $u4 = s4 + 8 \in [0, 15]$, which is bit-identical to inverting bit 3.
 
@@ -78,7 +78,7 @@ By providing magic operand `0x64086408` (incorporating Bit 3 set in each 16-bit 
 
 | Technique | Mathematical Soundness | Status | Empirical Validation Requirement |
 |---|---|---|---|
-| **Signed INT4 Dequant (`0x78`)** | Verified via KAT hex vectors | Mathematically Verified | Benchmarking against ExLlamaV2 kernel on physical T4 |
+| **Signed INT4 Dequant (`0x6A`)** | Verified via KAT hex vectors | Mathematically Verified | Benchmarking against ExLlamaV2 kernel on physical T4 |
 | **Unsigned INT4 (`0x64006400`)** | Verified via IEEE 754 math | Established Prior Art | Profiling `ncu` SASS instruction issue rate |
 | **PRMT Multi-Word Packing** | Verified via SASS bitwise logic | Known Optimization | Measuring throughput impact on 64-bit vector loads |
 | **Inline Epilogue Activation Fusion** | Verified via register flow | Standard Practice | Measuring latency reduction vs separate kernel pass |

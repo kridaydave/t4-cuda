@@ -24,7 +24,7 @@ To maintain academic and technical clarity, techniques analyzed in this document
 ### 1. Sub-Byte Unpacking & Dequantization Integration
 - **INT4 Dequantization via Magic Exponent Insertion**:
   - *Context*: Unpacks 4-bit weights into FP16 registers using `lop3.b32` with magic exponent `0x6400` (prior art: ExLlamaV2/Marlin/AWQ).
-  - *Target*: Bypasses integer-to-float conversion pipelines. Signed INT4 variant (`lop3.b32` LUT `0x78`) inverts sign bit 3 in a single cycle.
+  - *Target*: Bypasses integer-to-float conversion pipelines. Signed INT4 variant (`lop3.b32` LUT `0x6A`) inverts sign bit 3 in a single cycle.
 
 ### 2. Autoregressive Decode Occupancy Management ($M=1$)
 - **Regime-Split Power & Occupancy Management (Original Contribution)**:

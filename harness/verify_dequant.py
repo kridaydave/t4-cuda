@@ -4,7 +4,7 @@ Rigorous Verification & KAT Harness for LOP3 INT4 Dequantization.
 
 Covers both:
 1. Unsigned INT4 (u4 in [0..15]) via magic exponent 0x6400 (1024.0 bias)
-2. Signed Two's Complement INT4 (s4 in [-8..7]) via LOP3 LUT 0x78 (bit 3 flip, 1032.0 bias)
+2. Signed Two's Complement INT4 (s4 in [-8..7]) via LOP3 LUT 0x6A (bit 3 flip, 1032.0 bias)
 
 Features:
 - Asymmetrical non-monotonic hex vectors to catch positional / pair-swap bugs.
@@ -61,16 +61,16 @@ def verify_unsigned_lop3_math():
 
 def verify_signed_lop3_math():
     """
-    Mathematical Proof Verification for Signed INT4 LUT 0x78:
-    LOP3 LUT 0x78 inverts bit 3 (sign bit) while masking & ORing 0x6400.
+    Mathematical Proof Verification for Signed INT4 LUT 0x6A:
+    LOP3 LUT 0x6A inverts bit 3 (sign bit) while masking & ORing 0x6400.
     Resulting FP16 bit pattern represents (1032.0 + s4).
     Subtracting 1032.0 yields s4 in [-8..7] for all 16 values!
     """
-    print("\n--- [MATH PROOF] Signed INT4 LOP3 LUT 0x78 (Bit 3 Inversion) ---")
+    print("\n--- [MATH PROOF] Signed INT4 LOP3 LUT 0x6A (Bit 3 Inversion) ---")
     all_passed = True
     for raw_u4 in range(16):
         s4 = raw_u4 if raw_u4 < 8 else raw_u4 - 16
-        # LUT 0x78 flips bit 3: bit3_flipped = raw_u4 ^ 0x8
+        # LUT 0x6A flips bit 3: bit3_flipped = raw_u4 ^ 0x8
         fp16_bits = 0x6400 | (raw_u4 ^ 0x8)
         decoded = struct.unpack('<e', struct.pack('<H', fp16_bits))[0]
         expected_raw_fp16 = 1032.0 + s4
@@ -79,8 +79,8 @@ def verify_signed_lop3_math():
         if not match:
             all_passed = False
         print(f"  Raw 0x{raw_u4:X} -> s4={s4:2d} | Bit3 Flipped: 0x{(raw_u4^8):X} | Bits: 0x{fp16_bits:04X} | FP16: {decoded:6.1f} | (FP16 - 1032.0): {reconstructed_s4:5.1f} | Match: {match}")
-    assert all_passed, "Signed LOP3 LUT 0x78 math failed!"
-    print(">> [MATH VERIFIED] Signed LOP3 LUT 0x78 math is 100% exact for s4 in [-8..7].")
+    assert all_passed, "Signed LOP3 LUT 0x6A math failed!"
+    print(">> [MATH VERIFIED] Signed LOP3 LUT 0x6A math is 100% exact for s4 in [-8..7].")
 
 
 def run_asymmetrical_kats():
@@ -111,7 +111,7 @@ def run_asymmetrical_kats():
     s4_out = dequantize_s4_reference([w_s4], [scale_s4], [zero_s4])
     expected_s4 = [float(v) * 0.5 for v in s4_values]
 
-    print(f"\nSigned KAT (LUT 0x78): W = 0x{w_s4:08X} | Scale = {scale_s4} | Zero = {zero_s4}")
+    print(f"\nSigned KAT (LUT 0x6A): W = 0x{w_s4:08X} | Scale = {scale_s4} | Zero = {zero_s4}")
     print(f"  Positional Signed s4 (w0..w7): {s4_values}")
     print(f"  Dequantized Output FP16:       {s4_out}")
     print(f"  Expected Output FP16:          {expected_s4}")

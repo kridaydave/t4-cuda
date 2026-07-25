@@ -28,7 +28,7 @@ __device__ __forceinline__ void lop3_unpack_u4_ptx(
     asm volatile("fma.rn.f16x2 %0, %0, %1, %2;" : "+r"(raw_37) : "r"(scale_32), "r"(neg_bias_32));
 }
 
-// Pure PTX Signed INT4 Dequantization (0x78 + fma.rn.f16x2)
+// Pure PTX Signed INT4 Dequantization (0x6A + fma.rn.f16x2)
 __device__ __forceinline__ void lop3_unpack_s4_ptx(
     uint32_t W, 
     uint32_t &raw_04, uint32_t &raw_15, uint32_t &raw_26, uint32_t &raw_37,

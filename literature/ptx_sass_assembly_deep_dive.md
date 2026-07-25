@@ -7,7 +7,7 @@ This report provides an ultra-deep dive into Turing's low-level architecture, ex
 ### LOP3 Truth Tables
 The `LOP3` instruction in PTX and SASS allows performing arbitrary 3-input bitwise logical operations in a single cycle. It takes three inputs and an 8-bit immediate truth table (LUT).
 
-- **0x78**: Often used for signed combinations or conditionally flipping bits based on a mask. Truth table `0x78` corresponds to `(A ^ B) & C` or similar variations.
+- **0x6A**: Often used for signed combinations or conditionally flipping bits based on a mask. Truth table `0x6A` corresponds to `(A ^ B) & C` or similar variations.
 - **0x64**: Used for specific bit-packing and exponent injections in custom data types.
 - **0xE2**: `(A & B) | (A & C) | (B & C)` - Majority gate.
 - **0xF2**: `(A | B) | (A & ~C)` - Custom logical combination.
@@ -15,7 +15,7 @@ The `LOP3` instruction in PTX and SASS allows performing arbitrary 3-input bitwi
 **Inline PTX Example:**
 ```cpp
 // LOP3 block
-asm volatile("lop3.b32 %0, %1, %2, %3, 0x78;" : "=r"(d) : "r"(a), "r"(b), "r"(c));
+asm volatile("lop3.b32 %0, %1, %2, %3, 0x6A;" : "=r"(d) : "r"(a), "r"(b), "r"(c));
 ```
 
 ### Turing 128-bit SASS Instruction Word Control Codes

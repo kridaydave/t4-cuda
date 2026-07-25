@@ -9,11 +9,7 @@
 // 1. LOP3 Operations
 // ---------------------------------------------------------
 
-__device__ __forceinline__ uint32_t lop3_0x78(uint32_t a, uint32_t b, uint32_t c) {
-    uint32_t d;
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0x78;" : "=r"(d) : "r"(a), "r"(b), "r"(c));
-    return d;
-}
+
 
 __device__ __forceinline__ uint32_t lop3_0x64(uint32_t a, uint32_t b, uint32_t c) {
     uint32_t d;

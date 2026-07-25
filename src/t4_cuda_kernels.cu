@@ -314,7 +314,7 @@ __global__ void t4_int4_w4a16_dequant_wmma_gemm(
     }
 }
 
-// Signed INT4 Two's Complement Dequantization via LOP3 LUT 0x78 (Single-Cycle Sign Bit Inversion)
+// Signed INT4 Two's Complement Dequantization via LOP3 LUT 0x6A (Single-Cycle Sign Bit Inversion)
 __device__ __forceinline__ void turing_dequant_s4_twos_complement_8x(
     uint32_t packed_w, 
     half2 &w04, half2 &w15, half2 &w26, half2 &w37,
@@ -325,11 +325,11 @@ __device__ __forceinline__ void turing_dequant_s4_twos_complement_8x(
 
     uint32_t r04, r15, r26, r37;
 
-    // LUT 0x78 inverts bit 3 (sign bit) while inserting exponent 0x6400 in 1 SASS cycle
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0x78;" : "=r"(r04) : "r"(packed_w),       "r"(mask_even), "r"(magic_exp_s4));
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0x78;" : "=r"(r15) : "r"(packed_w >> 4),  "r"(mask_even), "r"(magic_exp_s4));
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0x78;" : "=r"(r26) : "r"(packed_w >> 8),  "r"(mask_even), "r"(magic_exp_s4));
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0x78;" : "=r"(r37) : "r"(packed_w >> 12), "r"(mask_even), "r"(magic_exp_s4));
+    // LUT 0x6A inverts bit 3 (sign bit) while inserting exponent 0x6400 in 1 SASS cycle
+    asm volatile("lop3.b32 %0, %1, %2, %3, 0x6A;" : "=r"(r04) : "r"(packed_w),       "r"(mask_even), "r"(magic_exp_s4));
+    asm volatile("lop3.b32 %0, %1, %2, %3, 0x6A;" : "=r"(r15) : "r"(packed_w >> 4),  "r"(mask_even), "r"(magic_exp_s4));
+    asm volatile("lop3.b32 %0, %1, %2, %3, 0x6A;" : "=r"(r26) : "r"(packed_w >> 8),  "r"(mask_even), "r"(magic_exp_s4));
+    asm volatile("lop3.b32 %0, %1, %2, %3, 0x6A;" : "=r"(r37) : "r"(packed_w >> 12), "r"(mask_even), "r"(magic_exp_s4));
 
     // Vectorized Fused Multiply-Add: neg_bias_1032_h2 = (-1032.0f - zero_point) * scale
     w04 = __hfma2(reinterpret_cast<half2&>(r04), scale_h2, neg_bias_1032_h2);

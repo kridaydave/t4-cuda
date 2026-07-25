@@ -113,7 +113,7 @@ A `half2` register contains two 16-bit floats: `[ FP16_High (bits 31..16) | FP16
 $$\text{Out} = f(A, B, C)$$
 Setting $A = W$, $B = \texttt{0x000F000F}$ (Mask), $C = \texttt{0x64006400}$ (Magic Exponent):
 We want $\text{Out} = (A \ \& \ B) \ \mid \ C$.
-The boolean truth table yields LUT `0xF2`.
+The boolean truth table yields LUT `0xF8`.
 
 #### Complete Inline PTX Assembly for 8-Weight Unpacking:
 
@@ -131,21 +131,21 @@ __device__ __forceinline__ void unpack_8_int4_to_4_half2(
 
     // 1. Extract even nibbles (w0, w2) and (w4, w6)
     // raw_02 = (W & 0x000F000F) | 0x64006400 -> represents [1024 + w2 | 1024 + w0]
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0xF2;" 
+    asm volatile("lop3.b32 %0, %1, %2, %3, 0xF8;" 
         : "=r"(raw_02) : "r"(W), "r"(mask_even), "r"(magic_exp));
 
     // raw_46: Shift W by 8 bits to bring w4, w6 into lower 16-bit positions
     uint32_t W_shift8 = W >> 8;
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0xF2;" 
+    asm volatile("lop3.b32 %0, %1, %2, %3, 0xF8;" 
         : "=r"(raw_46) : "r"(W_shift8), "r"(mask_even), "r"(magic_exp));
 
     // 2. Extract odd nibbles (w1, w3) and (w5, w7) by shifting W right by 4 bits
     uint32_t W_shift4 = W >> 4;
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0xF2;" 
+    asm volatile("lop3.b32 %0, %1, %2, %3, 0xF8;" 
         : "=r"(raw_13) : "r"(W_shift4), "r"(mask_even), "r"(magic_exp));
 
     uint32_t W_shift12 = W >> 12;
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0xF2;" 
+    asm volatile("lop3.b32 %0, %1, %2, %3, 0xF8;" 
         : "=r"(raw_57) : "r"(W_shift12), "r"(mask_even), "r"(magic_exp));
 
     // Cast raw uint32 bit patterns directly to half2
@@ -405,16 +405,16 @@ __device__ __forceinline__ void turing_dequant_w4a16_8x(
     uint32_t r02, r13, r46, r57;
 
     // Single-cycle LOP3 bitfield extraction & FP16 exponent insertion
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0xF2;" 
+    asm volatile("lop3.b32 %0, %1, %2, %3, 0xF8;" 
         : "=r"(r02) : "r"(packed_w), "r"(mask_even), "r"(magic_exp));
 
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0xF2;" 
+    asm volatile("lop3.b32 %0, %1, %2, %3, 0xF8;" 
         : "=r"(r13) : "r"(packed_w >> 4), "r"(mask_even), "r"(magic_exp));
 
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0xF2;" 
+    asm volatile("lop3.b32 %0, %1, %2, %3, 0xF8;" 
         : "=r"(r46) : "r"(packed_w >> 8), "r"(mask_even), "r"(magic_exp));
 
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0xF2;" 
+    asm volatile("lop3.b32 %0, %1, %2, %3, 0xF8;" 
         : "=r"(r57) : "r"(packed_w >> 12), "r"(mask_even), "r"(magic_exp));
 
     // Vectorized Fused Multiply-Add (Out = Raw * Scale - Bias)

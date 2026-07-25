@@ -57,10 +57,10 @@ In previous drafts, masking `W & 0x000F000F` was described as extracting pairs $
 Therefore, `W & 0x000F000F` extracts $(w_0, w_4)$ into the `half2` low and high slots respectively.
 
 #### Unpacking Shift & Mask Schedule:
-1. `raw_04` = `lop3.b32(W >> 0, 0x000F000F, 0x64006400, LUT=0xF2)` $\implies [1024 + w_4 \mid 1024 + w_0]$
-2. `raw_15` = `lop3.b32(W >> 4, 0x000F000F, 0x64006400, LUT=0xF2)` $\implies [1024 + w_5 \mid 1024 + w_1]$
-3. `raw_26` = `lop3.b32(W >> 8, 0x000F000F, 0x64006400, LUT=0xF2)` $\implies [1024 + w_6 \mid 1024 + w_2]$
-4. `raw_37` = `lop3.b32(W >> 12, 0x000F000F, 0x64006400, LUT=0xF2)` $\implies [1024 + w_7 \mid 1024 + w_3]$
+1. `raw_04` = `lop3.b32(W >> 0, 0x000F000F, 0x64006400, LUT=0xF8)` $\implies [1024 + w_4 \mid 1024 + w_0]$
+2. `raw_15` = `lop3.b32(W >> 4, 0x000F000F, 0x64006400, LUT=0xF8)` $\implies [1024 + w_5 \mid 1024 + w_1]$
+3. `raw_26` = `lop3.b32(W >> 8, 0x000F000F, 0x64006400, LUT=0xF8)` $\implies [1024 + w_6 \mid 1024 + w_2]$
+4. `raw_37` = `lop3.b32(W >> 12, 0x000F000F, 0x64006400, LUT=0xF8)` $\implies [1024 + w_7 \mid 1024 + w_3]$
 
 Each element is separated by a stride of 4, which aligns naturally with warp-level Tensor Core register distribution patterns.
 

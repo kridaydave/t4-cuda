@@ -128,7 +128,7 @@ def run_full_harness():
     verify_signed_lop3_math()
     run_asymmetrical_kats()
 
-    print("\n[SUMMARY] All Unsigned (0xF2) & Signed (0x78) LOP3 Math Proofs and KATs Passed!")
+    print("\n[SUMMARY] All Unsigned (0xF8) & Signed (0x78) LOP3 Math Proofs and KATs Passed!")
 
 
 if __name__ == "__main__":

@@ -51,13 +51,18 @@ w_test = torch.tensor([0xA7C13E59, 0xF817E29A], dtype=torch.int64).to(torch.int3
 scale_test = torch.tensor([0.25, 0.5], dtype=torch.float16, device='cuda')
 zero_test  = torch.tensor([2.0, 0.0], dtype=torch.float16, device='cuda')
 
-kernel_out = t4_kernels.dequantize_u4(w_test[:1], scale_test[:1], zero_test[:1])
-ref_out = torch.tensor(dequantize_u4_reference([0xA7C13E59], [0.25], [2.0]), dtype=torch.float16, device='cuda')
+kernel_out_u4 = t4_kernels.dequantize_u4(w_test[:1], scale_test[:1], zero_test[:1])
+ref_out_u4 = torch.tensor(dequantize_u4_reference([0xA7C13E59], [0.25], [2.0]), dtype=torch.float16, device='cuda')
+print('Kernel Output (u4):   ', kernel_out_u4)
+print('Reference Output (u4):', ref_out_u4)
+assert torch.allclose(kernel_out_u4, ref_out_u4, atol=1e-3), 'Unsigned KAT Mismatch on GPU!'
 
-print('Kernel Output:   ', kernel_out)
-print('Reference Output:', ref_out)
-assert torch.allclose(kernel_out, ref_out, atol=1e-3), 'Unsigned KAT Mismatch on GPU!'
-print('>> [GPU SUCCESS] On-GPU KAT Match Verified!')
+kernel_out_s4 = t4_kernels.dequantize_s4(w_test[1:], scale_test[1:], zero_test[1:])
+ref_out_s4 = torch.tensor(dequantize_s4_reference([0xF817E29A], [0.5], [0.0]), dtype=torch.float16, device='cuda')
+print('Kernel Output (s4):   ', kernel_out_s4)
+print('Reference Output (s4):', ref_out_s4)
+assert torch.allclose(kernel_out_s4, ref_out_s4, atol=1e-3), 'Signed KAT Mismatch on GPU!'
+print('>> [GPU SUCCESS] On-GPU Unsigned & Signed KAT Matches Verified!')
 
 # 2. Large Tensor Stress Test (4096 x 4096)
 w_large = torch.randint(0, 0x7FFFFFFF, (4096 * 512,), dtype=torch.int32, device='cuda')

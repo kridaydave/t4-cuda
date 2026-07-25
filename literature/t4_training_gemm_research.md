@@ -32,7 +32,7 @@ The Tesla T4 features 40 Streaming Multiprocessors (SMs) based on the TU104 die.
 | **FP32 Cores** | 16 | 64 | 2,560 |
 | **INT32 Cores** | 16 | 64 | 2,560 |
 | **Turing Tensor Cores** | 2 | 8 | 320 |
-| **Register File Capacity** | 16 KB (4,096 regs) | 64 KB (16,384 regs) | 2,560 KB |
+| **Register File Capacity** | 64 KB (16,384 regs) | 256 KB (65,536 regs) | 10,240 KB |
 | **Shared Memory / L1 Cache** | Unified (up to 64 KB SMEM) | Configurable 64 KB / 32 KB | 2,560 KB |
 | **Max Thread Capacity** | 256 threads (8 warps) | 1,024 threads (32 warps) | 40,960 threads |
 

@@ -19,7 +19,7 @@ This research paper provides a comprehensive microarchitectural analysis and mat
 - **Streaming Multiprocessors (SMs)**: 40 SMs.
 - **Cores per SM**: 64 FP32 Cores, 64 INT32 Cores, 8 Tensor Cores (320 Tensor Cores total).
 - **Execution Units per SM**: 4 sub-cores / processing blocks per SM. Each sub-core contains 1 Warp Scheduler, 1 Dispatch Unit, 16 FP32 cores, 16 INT32 cores, and 2 Tensor Cores.
-- **Register File**: 64 KB per SM (16,384 32-bit registers), structured as 4 KB per sub-core.
+- **Register File**: 256 KB per SM (65,536 32-bit registers total), structured as 64 KB / 16,384 registers per sub-core.
 - **Maximum Thread Occupancy**: 1024 threads per SM (32 warps/SM) or up to 16 thread blocks per SM. Total GPU capacity: 40,960 threads.
 - **Memory Subsystem**: 16 GB GDDR6, 256-bit bus, 320 GB/s peak bandwidth, 4 MB L2 Cache.
 - **Clock Frequencies**: Base Clock = 585 MHz, Peak Boost Clock = 1590 MHz.

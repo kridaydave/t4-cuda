@@ -321,21 +321,20 @@ $$\text{Max Throughput} = \frac{320 \text{ GB/s}}{3.5 \text{ GB/token}} \approx 
 While W4A16 decoding is memory-bound, maintaining high memory throughput requires **hiding GDDR6 read latency** ($\approx 450\text{--}600$ clock cycles).
 
 #### Register File Constraints on Turing SM 7.5:
-- T4 has **40 SMs**. Each SM contains **64 KB Register File** ($16,384$ 32-bit registers).
+- T4 has **40 SMs**. Each SM contains **256 KB Register File** ($65,536$ 32-bit registers total, split across 4 sub-cores at 64 KB / 16,384 registers per sub-core).
 - Maximum hardware allocation per thread: **255 registers**.
 - Maximum threads per SM: **1024 threads** (32 warps).
 
 #### Occupancy vs Register Allocation per Thread:
 
-$$\text{Active Warps per SM} = \min\left(32, \left\lfloor \frac{16,384}{\text{Registers per Thread} \times 32} \right\rfloor\right)$$
+$$\text{Active Warps per SM} = \min\left(32, \left\lfloor \frac{65,536}{\text{Registers per Thread} \times 32} \right\rfloor\right)$$
 
 | Registers / Thread | Active Warps / SM | Active Threads / SM | SM Occupancy (%) |
 | :---: | :---: | :---: | :---: |
-| $\le 16$ | 32 | 1024 | **100.0%** |
-| $17\text{--}32$ | 16 | 512 | **50.0%** |
-| $33\text{--}48$ | 10 | 320 | **31.25%** |
-| $49\text{--}64$ | 8 | 256 | **25.0%** |
-| $> 64$ | $< 6$ | $< 192$ | **$< 18.75\%$** |
+| $\le 64$ | 32 | 1024 | **100.0%** |
+| $65\text{--}128$ | 16 | 512 | **50.0%** |
+| $129\text{--}192$ | 10 | 320 | **31.25%** |
+| $193\text{--}255$ | 8 | 256 | **25.0%** |
 
 ---
 

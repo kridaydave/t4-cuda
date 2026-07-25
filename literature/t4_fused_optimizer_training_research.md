@@ -10,7 +10,7 @@ The **NVIDIA Tesla T4** (TU104 GPU, Compute Capability 7.5, Turing architecture)
   - `IMMA`: INT8 (`m8n8k16`) and INT4 (`m8n8k32`) precision modes.
   - **Hardware Limitations**: *No native hardware support for BF16 or TF32* (introduced later in Ampere CC 8.0). All high-precision training must use FP32 master weights with FP16 dynamic scaling or FP32 accumulation.
 - **Register File & Memory Hierarchy**:
-  - 64 KB register file per SM (16,384 32-bit registers per SM; up to 255 registers per thread).
+  - 256 KB register file per SM (65,536 32-bit registers per SM, 16,384 per sub-core; up to 255 registers per thread).
   - Unified L1 Data Cache & Shared Memory up to 96 KB per SM (configurable splits: 64 KB Shared / 32 KB L1, 32 KB Shared / 64 KB L1, or 48 KB / 48 KB).
   - L2 Cache: 4 MB unified cache.
   - Global Memory: 16 GB GDDR6 (300–320 GB/s peak bandwidth).

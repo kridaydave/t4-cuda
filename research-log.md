@@ -57,3 +57,13 @@
 2. **Subagent 2 (`T4 Research Rigor & Edge-Case Auditor - Memory & Precision`)**:
    - Auditing FP16 Softmax overflow/underflow ($S \ge 4096$), SMEM bank conflict padding alignment, NF4 outlier feature spikes (>6.0 std dev), and AdamW gradient underflow.
    - Target Artifact: `research/literature/audit_memory_and_precision_issues.md`.
+
+---
+
+## [2026-07-25] Fused W4A16 GEMM Implementation & Complete Verification Pass
+
+### Key Accomplishments:
+1. **Single-Cycle LOP3 Dequantization Verification**: Fully verified `0xEA` (unsigned) and `0x6A` (signed Two's Complement) LUTs. Corrected LOP3 operand-order sensitivity documentation (`0xEA` for `(A & B) | C` with `(W, mask, magic)`).
+2. **Fused W4A16 GEMM CUDA Kernels**: Built `src/kernels/fused_w4a16_gemm.cu` and `src/kernels/fused_w4a16_gemm.h`, fusing `lop3.b32` sub-byte dequantization directly inside registers during vector dot-products (`fused_w4a16_gemv_u4_kernel` and `fused_w4a16_gemv_s4_kernel`).
+3. **PyTorch C++ Binding Extensions**: Exposed `t4_kernels.fused_w4a16_gemm_u4` and `t4_kernels.fused_w4a16_gemm_s4` in `src/bindings.cpp` & `src/setup.py`.
+4. **Verification & Benchmark Pipeline**: Extended `verify_colab.sh` and `harness/verify_fused_gemm.py` with 6-stage differential testing, confirming bit-exact accuracy and numerical convergence against reference PyTorch `torch.matmul`.

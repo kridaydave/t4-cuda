@@ -1,5 +1,10 @@
 #include "lop3_dequant.h"
 
+__device__ __forceinline__ uint32_t pack_half_dup_u32(half val) {
+    uint16_t bits = *reinterpret_cast<const uint16_t*>(&val);
+    return ((uint32_t)bits << 16) | (uint32_t)bits;
+}
+
 __global__ void lop3_dequant_u4_kernel(
     const uint32_t* __restrict__ packed_weights,
     half* __restrict__ output_fp16,
@@ -14,25 +19,28 @@ __global__ void lop3_dequant_u4_kernel(
     half s = scale[idx];
     half z = zero_point[idx];
 
-    half2 scale_h2 = __half2half2(s);
-    half half1024 = __float2half(-1024.0f);
-    half bias_val = __hmul(__hsub(half1024, z), s);
-    half2 neg_bias_h2 = __half2half2(bias_val);
+    float s_f = __half2float(s);
+    float z_f = __half2float(z);
+    float bias_f = (-1024.0f - z_f) * s_f;
+    half bias_h = __float2half(bias_f);
 
-    half2 h2_04, h2_15, h2_26, h2_37;
-    lop3_unpack_u4_to_4_half2(W, h2_04, h2_15, h2_26, h2_37, scale_h2, neg_bias_h2);
+    uint32_t scale_32 = pack_half_dup_u32(s);
+    uint32_t neg_bias_32 = pack_half_dup_u32(bias_h);
+
+    uint32_t raw_04, raw_15, raw_26, raw_37;
+    lop3_unpack_u4_ptx(W, raw_04, raw_15, raw_26, raw_37, scale_32, neg_bias_32);
 
     int out_offset = idx * 8;
-    half* out_ptr = output_fp16 + out_offset;
+    uint16_t* out_ptr = reinterpret_cast<uint16_t*>(output_fp16 + out_offset);
 
-    out_ptr[0] = __low2half(h2_04);
-    out_ptr[1] = __low2half(h2_15);
-    out_ptr[2] = __low2half(h2_26);
-    out_ptr[3] = __low2half(h2_37);
-    out_ptr[4] = __high2half(h2_04);
-    out_ptr[5] = __high2half(h2_15);
-    out_ptr[6] = __high2half(h2_26);
-    out_ptr[7] = __high2half(h2_37);
+    out_ptr[0] = (uint16_t)(raw_04 & 0xFFFF);
+    out_ptr[1] = (uint16_t)(raw_15 & 0xFFFF);
+    out_ptr[2] = (uint16_t)(raw_26 & 0xFFFF);
+    out_ptr[3] = (uint16_t)(raw_37 & 0xFFFF);
+    out_ptr[4] = (uint16_t)(raw_04 >> 16);
+    out_ptr[5] = (uint16_t)(raw_15 >> 16);
+    out_ptr[6] = (uint16_t)(raw_26 >> 16);
+    out_ptr[7] = (uint16_t)(raw_37 >> 16);
 }
 
 __global__ void lop3_dequant_s4_kernel(
@@ -49,25 +57,28 @@ __global__ void lop3_dequant_s4_kernel(
     half s = scale[idx];
     half z = zero_point[idx];
 
-    half2 scale_h2 = __half2half2(s);
-    half half1032 = __float2half(-1032.0f);
-    half bias_val = __hmul(__hsub(half1032, z), s);
-    half2 neg_bias_1032_h2 = __half2half2(bias_val);
+    float s_f = __half2float(s);
+    float z_f = __half2float(z);
+    float bias_f = (-1032.0f - z_f) * s_f;
+    half bias_h = __float2half(bias_f);
 
-    half2 h2_04, h2_15, h2_26, h2_37;
-    lop3_unpack_s4_to_4_half2(W, h2_04, h2_15, h2_26, h2_37, scale_h2, neg_bias_1032_h2);
+    uint32_t scale_32 = pack_half_dup_u32(s);
+    uint32_t neg_bias_1032_32 = pack_half_dup_u32(bias_h);
+
+    uint32_t raw_04, raw_15, raw_26, raw_37;
+    lop3_unpack_s4_ptx(W, raw_04, raw_15, raw_26, raw_37, scale_32, neg_bias_1032_32);
 
     int out_offset = idx * 8;
-    half* out_ptr = output_fp16 + out_offset;
+    uint16_t* out_ptr = reinterpret_cast<uint16_t*>(output_fp16 + out_offset);
 
-    out_ptr[0] = __low2half(h2_04);
-    out_ptr[1] = __low2half(h2_15);
-    out_ptr[2] = __low2half(h2_26);
-    out_ptr[3] = __low2half(h2_37);
-    out_ptr[4] = __high2half(h2_04);
-    out_ptr[5] = __high2half(h2_15);
-    out_ptr[6] = __high2half(h2_26);
-    out_ptr[7] = __high2half(h2_37);
+    out_ptr[0] = (uint16_t)(raw_04 & 0xFFFF);
+    out_ptr[1] = (uint16_t)(raw_15 & 0xFFFF);
+    out_ptr[2] = (uint16_t)(raw_26 & 0xFFFF);
+    out_ptr[3] = (uint16_t)(raw_37 & 0xFFFF);
+    out_ptr[4] = (uint16_t)(raw_04 >> 16);
+    out_ptr[5] = (uint16_t)(raw_15 >> 16);
+    out_ptr[6] = (uint16_t)(raw_26 >> 16);
+    out_ptr[7] = (uint16_t)(raw_37 >> 16);
 }
 
 void launch_lop3_dequant_u4(

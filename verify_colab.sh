@@ -27,6 +27,7 @@ nvcc -O3 -arch=sm_75 src/t4_microbenchmarks.cu -o t4_microbenchmark
 echo ""
 echo "--> [4/5] Building & Installing PyTorch CUDA Extension (t4_kernels)..."
 cd "$REPO_DIR/src"
+rm -rf build *.so
 python3 setup.py build_ext --inplace
 cp -f *.so "$REPO_DIR/" 2>/dev/null || true
 cp -f *.so "$REPO_DIR/src/" 2>/dev/null || true

@@ -1,3 +1,4 @@
+// Tesla T4 LOP3 Fast Dequantization (0xF8 Unsigned / 0x78 Signed)
 #include "lop3_dequant.h"
 
 __device__ __forceinline__ uint32_t pack_half_dup_u32(half val) {

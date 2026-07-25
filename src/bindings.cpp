@@ -1,4 +1,5 @@
 #include <torch/extension.h>
+#include <c10/cuda/CUDAStream.h>
 #include <cuda_fp16.h>
 #include "kernels/lop3_dequant.h"
 
@@ -16,13 +17,15 @@ torch::Tensor dequantize_lop3_u4_cuda(
     auto options = torch::TensorOptions().dtype(torch::kHalf).device(packed_weights.device());
     torch::Tensor output = torch::empty({num_uint32s * 8}, options);
 
+    cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
+
     launch_lop3_dequant_u4(
         reinterpret_cast<const uint32_t*>(packed_weights.data_ptr<int32_t>()),
         reinterpret_cast<half*>(output.data_ptr<at::Half>()),
         reinterpret_cast<const half*>(scales.data_ptr<at::Half>()),
         reinterpret_cast<const half*>(zero_points.data_ptr<at::Half>()),
         num_uint32s,
-        at::cuda::getCurrentCUDAStream());
+        stream);
 
     return output;
 }
@@ -41,13 +44,15 @@ torch::Tensor dequantize_lop3_s4_cuda(
     auto options = torch::TensorOptions().dtype(torch::kHalf).device(packed_weights.device());
     torch::Tensor output = torch::empty({num_uint32s * 8}, options);
 
+    cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
+
     launch_lop3_dequant_s4(
         reinterpret_cast<const uint32_t*>(packed_weights.data_ptr<int32_t>()),
         reinterpret_cast<half*>(output.data_ptr<at::Half>()),
         reinterpret_cast<const half*>(scales.data_ptr<at::Half>()),
         reinterpret_cast<const half*>(zero_points.data_ptr<at::Half>()),
         num_uint32s,
-        at::cuda::getCurrentCUDAStream());
+        stream);
 
     return output;
 }

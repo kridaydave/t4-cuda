@@ -5,6 +5,7 @@
 #include <cuda_fp16.h>
 #include <stdint.h>
 
+#ifdef __CUDACC__
 // ============================================================================
 // Unsigned INT4 Dequantization (u4 in [0..15])
 // Uses magic exponent 0x6400 (1024.0 in FP16)
@@ -69,6 +70,7 @@ __device__ __forceinline__ void lop3_unpack_s4_to_4_half2(
     h2_26 = __hfma2(val_26, scale_h2, neg_bias_1032_h2);
     h2_37 = __hfma2(val_37, scale_h2, neg_bias_1032_h2);
 }
+#endif // __CUDACC__
 
 void launch_lop3_dequant_u4(
     const uint32_t* d_packed, half* d_output, const half* d_scale, const half* d_zero, int num_uint32s, cudaStream_t stream = 0);

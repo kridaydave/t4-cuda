@@ -1,64 +1,105 @@
-# Future Engineering Roadmap & Next Steps
+# Tesla T4 GPU Execution & Empirical Verification Protocol
 
-This document outlines the actionable next steps for taking the **Tesla T4 (Turing CC 7.5) Extreme Optimizations** from research whitepapers and prototype CUDA C++ kernels into production deployment and academic publication.
-
----
-
-## Step 1: PyTorch C++ / CUDA Extension Build & Verification Harness
-
-### Objective:
-Package the custom CUDA C++ and PTX assembly kernels in `research/src/t4_cuda_kernels.cu` into a production C++/Python extension using `setup.py` and `torch.utils.cpp_extension`.
-
-### Tasks:
-1. **PyBind11 & C++ Bindings**:
-   - Implement C++ wrapper headers (`research/src/t4_extension_bindings.cpp`) exposing custom forward, backward ($dW, dX$), and fused AdamW kernels to Python.
-   - Register custom PyTorch operators (`torch.ops.t4_cuda.fused_backward_adamw`, `torch.ops.t4_cuda.dequant_w4a16_lop3`).
-2. **Numerical Correctness Unit Tests**:
-   - Build a comprehensive pytest suite (`research/tests/test_t4_kernels.py`).
-   - Compare outputs against `torch.matmul` and standard PyTorch Autograd across matrix dimensions ($M, N, K \in [1, 8192]$).
-   - Enforce tolerance checks: FP16 absolute tolerance `atol <= 1e-3`, FP32 accumulation tolerance `atol <= 1e-5`.
+This document details the concrete 5-stage execution plan for building, verifying, profiling, and benchmarking our custom **Turing (`sm_75`) CUDA kernels** on a physical Tesla T4 GPU (e.g. Google Colab T4 instance or AWS `g4dn`).
 
 ---
 
-## Step 2: Triton Micro-Kernel Suite (Turing `sm_75` Specific)
+## 1. Fast Compile-Only Register & Assembly Audit (`nvcc`)
 
-### Objective:
-Implement equivalent Python Triton micro-kernels compiled specifically for Compute Capability 7.5 (`sm_75` / Turing T4), providing pure Python accessibility for PyTorch pipelines.
+Before building Python extensions, perform a fast static compilation check to inspect ptxas register allocation and stack spill metrics.
 
-### Tasks:
-1. **T4-Tailored Triton Kernels**:
-   - Write `@triton.jit` GEMM kernels configured with tile sizes ($128 \times 128 \times 32$) and 2-stage double buffering (`num_stages=2`).
-   - Replicate the `lop3.b32` LUT `0x78` signed INT4 bitfield extraction using Triton inline assembly (`triton.language.inline_asm`).
-2. **Power-Aware Autotuning**:
-   - Configure Triton's autotuner (`@triton.autotune`) to cap active warp occupancy at **25.0% (8 warps / 256 threads per SM)** on T4, preventing NVPM clock throttling down to 950 MHz.
+```bash
+nvcc -arch=sm_75 -Xptxas -v -c research/src/kernels/lop3_dequant.cu -o /tmp/lop3_dequant.o
+```
 
----
-
-## Step 3: Integration into Google Colab Pipelines (`train_eli_colab.py` & `infer_eli.py`)
-
-### Objective:
-Integrate custom T4 kernels into the repository's existing Colab training and inference scripts to accelerate fine-tuning and emergence evaluation.
-
-### Tasks:
-1. **Colab Fine-Tuning Integration (`train_eli_colab.py`)**:
-   - Replace standard PyTorch backward passes and AdamW updates with the **Fused Backward GEMM + AdamW Kernel**.
-   - Enable **QLoRA (NF4 4-bit) + Full Activation Checkpointing**, capping peak VRAM at **5.48 GB** and leaving 10.5 GB free for batch scaling ($B=4$).
-2. **Emergence Evaluation & Fast Inference (`infer_eli.py` & `eval_emergence.py`)**:
-   - Inject the **Signed INT4 LUT `0x78` Dequantization Kernel** and **Fused FlashAttention-2 Sub-Tile Kernel** into `infer_eli.py` for ultra-fast single-token decoding on Google Colab T4 GPUs.
+### Audit Targets:
+- **Actual Register Count per Thread**: Check register allocation reported by `ptxas` against theoretical target bounds ($\le 64$ registers/thread).
+- **Stack Spills**: Verify `0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads`. Any non-zero spill indicates register pressure or bad buffer indexing.
 
 ---
 
-## Step 4: NeurIPS / ICLR LaTeX Research Paper
+## 2. PyTorch C++ Extension Build
 
-### Objective:
-Draft a formal NeurIPS / ICLR format LaTeX research paper documenting our hardware discoveries, mathematical derivations, empirical benchmarks, and microarchitectural novelties.
+Build the C++/CUDA extension locally using PyTorch's `setup.py` builder to verify C++ header linkages, PyBind11 signatures, CUDA stream types, and PyTorch ABI compatibility.
 
-### Paper Specification:
-- **Title**: *"Pushing Turing to the Limit: Power-Aware Occupancy, Single-Cycle Dequantization, and Fused Backward GEMM for Tesla T4 GPUs"*
-- **Target Venues**: NeurIPS / ICLR / MLSys / ASPLOS.
-- **Key Sections**:
-  1. *Abstract & Introduction*: Problem statement on T4 legacy hardware support in modern LLM engines (vLLM/CUTLASS 3.x).
-  2. *The 70W Occupancy Paradox*: Mathematical proof and empirical verification of NVPM clock downclocking.
-  3. *Single-Cycle Sub-Byte Dequantization*: Derivation of LUT `0x78` sign-bit flipping and IEEE 754 magic exponent insertion.
-  4. *Fused Backward GEMM + AdamW*: DRAM memory traffic reduction math (28 B/param $\rightarrow$ 22 B/param).
-  5. *Empirical Benchmarks*: TFLOPS throughput, memory bandwidth saturation, and VRAM scaling figures.
+```bash
+cd research/src && python3 setup.py build_ext --inplace
+```
+
+### Audit Targets:
+- Confirm `bindings.cpp` compiles cleanly without signature mismatches or missing symbol errors.
+- Verify `t4_kernels.so` is created in `research/src/`.
+
+---
+
+## 3. On-GPU Differential Verification (Kernel vs Independent Reference)
+
+Run differential verification comparing the custom LOP3 CUDA kernel directly against an independent PyTorch reference unpacker on the GPU.
+
+```python
+import torch
+import t4_kernels
+from research.harness.verify_dequant import dequantize_u4_reference, dequantize_s4_reference
+
+# 1. Run KAT Vectors First (Hex vectors: 0xA7C13E59, 0xF817E29A)
+w_test = torch.tensor([0xA7C13E59, 0xF817E29A], dtype=torch.int32, device="cuda")
+scale_test = torch.tensor([0.25, 0.5], dtype=torch.float16, device="cuda")
+zero_test  = torch.tensor([2.0, 0.0], dtype=torch.float16, device="cuda")
+
+kernel_out = t4_kernels.dequantize_u4(w_test[:1], scale_test[:1], zero_test[:1])
+ref_out = torch.tensor(dequantize_u4_reference([0xA7C13E59], [0.25], [2.0]), dtype=torch.float16, device="cuda")
+
+assert torch.allclose(kernel_out, ref_out, atol=1e-3), "Unsigned KAT Mismatch on GPU!"
+```
+
+### Audit Targets:
+- KAT hex vector match (`0xA7C13E59`, `0xF817E29A`) guarantees that register layouts and `half2` memory packing match theoretical expectations.
+- Large-tensor random verification (`M=4096, N=4096`) enforces `torch.allclose(kernel_out, ref_out, atol=1e-3)`.
+
+---
+
+## 4. Hardware Telemetry & Thermal/Clock Profiling (`nvidia-smi`)
+
+Capture real SM boost clocks, TDP power draw, and active throttle reasons under tight execution loops to measure the physical hardware response of the T4 card.
+
+```bash
+# Launch background telemetry sampler (20ms interval)
+nvidia-smi --query-gpu=clocks.sm,power.draw,temperature.gpu,clocks_throttle_reasons.active --format=csv -lms 20 > /tmp/t4_telemetry.csv &
+SAMPLER_PID=$!
+
+# Run kernel in a tight execution loop for 5 seconds
+python3 -c "
+import torch, t4_kernels, time
+w = torch.randint(0, 0x7FFFFFFF, (65536,), dtype=torch.int32, device='cuda')
+s = torch.rand((65536,), dtype=torch.float16, device='cuda')
+z = torch.zeros((65536,), dtype=torch.float16, device='cuda')
+start = time.time()
+while time.time() - start < 5.0:
+    _ = t4_kernels.dequantize_u4(w, s, z)
+torch.cuda.synchronize()
+"
+
+kill $SAMPLER_PID
+cat /tmp/t4_telemetry.csv | head -n 30
+```
+
+### Audit Targets:
+- **Observed SM Clock**: Record actual SM boost clocks under high occupancy vs capped occupancy.
+- **Power Draw**: Record real Watts consumed vs the 70W TDP ceiling.
+- **Throttle Reasons**: Check whether `HW Power Brake` or `Sw Power Cap` active throttle flags engage.
+
+---
+
+## 5. Nsight Compute (`ncu`) Roofline & Speed-of-Light Analysis
+
+Once correctness and thermal behavior are measured, profile the kernel using Nsight Compute to obtain hardware-level Speed-of-Light (SOL) performance metrics.
+
+```bash
+ncu --metrics sm__throughput.of_peak_allocation_sol,dram__throughput.of_peak_allocation_sol,smsp__pipe_tensor_op_hmma_cycles_active.avg.pct_of_peak_sustained \
+    python3 research/harness/verify_dequant.py
+```
+
+### Audit Targets:
+- **DRAM SOL %**: Measure effective GDDR6 memory bandwidth saturation against the 320 GB/s peak.
+- **Tensor Core Pipe SOL %**: Measure HMMA pipe active cycles.
+- **Occupancy & Scheduler Stat**: Verify active warps per SM and warp stall causes.

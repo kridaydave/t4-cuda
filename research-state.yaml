@@ -1,4 +1,4 @@
-# Central State: Extreme Tesla-T4 & CUDA Optimizations
+# Central State: Tesla-T4 CUDA Optimizations & Microarchitecture Analysis
 project_name: "t4-cuda-extreme-optimizations"
 version: "5.1.0"
 target_hardware:
@@ -14,33 +14,37 @@ target_hardware:
   tdp_power_limit: "70 Watts"
   max_boost_clock: "1590 MHz"
 
-verified_novelties:
+research_components:
   lop3_signed_int4_lut_0x78:
-    confidence: "98.75%"
+    validation_status: "Mathematically Verified (Hex KAT Vector Matched)"
+    prior_art_reference: "Extends FP16 magic exponent insertion (ExLlamaV2, Marlin, AWQ) to signed INT4 two's complement."
     single_cycle: true
     description: "Single-cycle two's complement sign bit 3 inversion with FP16 magic exponent 0x64086408."
   tdp_70w_occupancy_cap:
-    confidence: "97.4%"
-    boost_clock: "1590 MHz locked"
-    speedup: "1.47x training & prefill GEMM throughput"
+    validation_status: "Analytically Derived Model (Pending GPU Benchmark)"
+    prior_art_reference: "Original T4-specific research contribution for 70W passively cooled GPUs."
+    boost_clock_target: "1590 MHz locked"
+    predicted_speedup: "1.47x prefill GEMM throughput"
     description: "__launch_bounds__(256, 1) capped at 25% occupancy prevents NVPM power throttling down to 950 MHz."
   fused_backward_gemm_adamw:
-    confidence: "96.8%"
+    validation_status: "Analytically Derived Model (Pending GPU Benchmark)"
+    prior_art_reference: "Original T4-specific research contribution."
     bandwidth_reduction: "21.4%"
     description: "Accumulates dW in register fragments across K loop and executes AdamW update directly in registers without writing dW to VRAM."
   inline_silu_backward_fusion:
-    confidence: "97.2%"
-    speedup: "2.0x activation derivative math"
+    validation_status: "Analytically Derived Model"
+    prior_art_reference: "Epilogue activation fusion standard practice (CUTLASS / cuBLAS)."
     description: "Evaluates SiLU derivative inline via SIMD __hfma2 intrinsics at output of backward GEMM fragment."
   qlora_activation_checkpointing_vram:
-    confidence: "99.0%"
+    validation_status: "VRAM Budget Derived (Analytical Model)"
+    prior_art_reference: "QLoRA (Dettmers et al., 2023) and Activation Checkpointing (Chen et al., 2016)."
     peak_vram_8b_model: "5.48 GB"
     description: "Fits Llama-3-8B fine-tuning into 34% of T4's 16GB VRAM, leaving 10.5 GB free for batch B=4 / context S=4096 scaling."
   audit_hardware_and_assembly_remedials:
-    confidence: "98.5%"
+    validation_status: "Risk Audit Complete"
     description: "Critical audit identifying 4 key risks (register spilling, tile under-utilization, SASS port contention, dI/dt power spikes) with explicit mitigations."
   audit_memory_and_precision_remedials:
-    confidence: "98.5%"
+    validation_status: "Risk Audit Complete"
     description: "Critical audit identifying 4 numerical/VRAM risks (FP16 Softmax overflow, 16-byte SMEM alignment, NF4 outliers, AdamW underflow) with explicit mitigations."
 
 artifacts:
@@ -59,4 +63,5 @@ artifacts:
   fused_optimizer_training_whitepaper: "research/literature/t4_fused_optimizer_training_research.md"
   extreme_sass_ptx_whitepaper: "research/literature/extreme_sass_and_ptx_microarchitecture.md"
   extreme_memory_cache_whitepaper: "research/literature/extreme_memory_cache_and_vram_architecture.md"
+  radical_breakthroughs_strategic_analysis: "research/literature/radical_breakthroughs_inference_and_training.md"
   html_presentation_report: "research/to_human/t4_cuda_research_presentation.html"

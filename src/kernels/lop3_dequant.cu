@@ -1,7 +1,7 @@
 #include "lop3_dequant.h"
 
 __device__ __forceinline__ uint32_t pack_half_dup_u32(half val) {
-    uint16_t bits = *reinterpret_cast<const uint16_t*>(&val);
+    uint16_t bits = __half_as_ushort(val);
     return ((uint32_t)bits << 16) | (uint32_t)bits;
 }
 

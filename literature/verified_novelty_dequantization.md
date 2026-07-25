@@ -57,10 +57,10 @@ In previous drafts, masking `W & 0x000F000F` was described as extracting pairs $
 Therefore, `W & 0x000F000F` extracts $(w_0, w_4)$ into the `half2` low and high slots respectively.
 
 #### Unpacking Shift & Mask Schedule:
-1. `raw_04` = `lop3.b32(W >> 0, 0x000F000F, 0x64006400, LUT=0xF8)` $\implies [1024 + w_4 \mid 1024 + w_0]$
-2. `raw_15` = `lop3.b32(W >> 4, 0x000F000F, 0x64006400, LUT=0xF8)` $\implies [1024 + w_5 \mid 1024 + w_1]$
-3. `raw_26` = `lop3.b32(W >> 8, 0x000F000F, 0x64006400, LUT=0xF8)` $\implies [1024 + w_6 \mid 1024 + w_2]$
-4. `raw_37` = `lop3.b32(W >> 12, 0x000F000F, 0x64006400, LUT=0xF8)` $\implies [1024 + w_7 \mid 1024 + w_3]$
+1. `raw_04` = `lop3.b32(W >> 0, 0x000F000F, 0x64006400, LUT=0xEA)` $\implies [1024 + w_4 \mid 1024 + w_0]$
+2. `raw_15` = `lop3.b32(W >> 4, 0x000F000F, 0x64006400, LUT=0xEA)` $\implies [1024 + w_5 \mid 1024 + w_1]$
+3. `raw_26` = `lop3.b32(W >> 8, 0x000F000F, 0x64006400, LUT=0xEA)` $\implies [1024 + w_6 \mid 1024 + w_2]$
+4. `raw_37` = `lop3.b32(W >> 12, 0x000F000F, 0x64006400, LUT=0xEA)` $\implies [1024 + w_7 \mid 1024 + w_3]$
 
 Each element is separated by a stride of 4, which aligns naturally with warp-level Tensor Core register distribution patterns.
 
@@ -70,7 +70,7 @@ Each element is separated by a stride of 4, which aligns naturally with warp-lev
 
 For Signed INT4 stored in Two's Complement format ($s4 \in [-8, 7]$), bit 3 represents the sign bit. Adding 8 to $s4$ produces $u4 = s4 + 8 \in [0, 15]$, which is bit-identical to inverting bit 3.
 
-By providing magic operand `0x64086408` (incorporating Bit 3 set in each 16-bit half) and invoking `lop3.b32` with LUT `0x78` (`(A ^ B) & C`), the sign bit inversion and exponent insertion execute simultaneously in 1 SASS cycle.
+By providing magic operand `0x64086408` (incorporating Bit 3 set in each 16-bit half) and invoking `lop3.b32` with LUT `0x6A` (`(A^C)&B | C&~B`), the sign bit inversion and exponent insertion execute simultaneously in 1 SASS cycle.
 
 ---
 

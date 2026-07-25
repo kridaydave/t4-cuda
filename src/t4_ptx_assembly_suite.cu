@@ -33,9 +33,15 @@ __device__ __forceinline__ uint32_t lop3_0xF2(uint32_t a, uint32_t b, uint32_t c
     return d;
 }
 
-__device__ __forceinline__ uint32_t lop3_0xF8(uint32_t a, uint32_t b, uint32_t c) {
+__device__ __forceinline__ uint32_t lop3_0xEA(uint32_t a, uint32_t b, uint32_t c) {
     uint32_t d;
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0xF8;" : "=r"(d) : "r"(a), "r"(b), "r"(c));
+    asm volatile("lop3.b32 %0, %1, %2, %3, 0xEA;" : "=r"(d) : "r"(a), "r"(b), "r"(c));
+    return d;
+}
+
+__device__ __forceinline__ uint32_t lop3_0x6A(uint32_t a, uint32_t b, uint32_t c) {
+    uint32_t d;
+    asm volatile("lop3.b32 %0, %1, %2, %3, 0x6A;" : "=r"(d) : "r"(a), "r"(b), "r"(c));
     return d;
 }
 

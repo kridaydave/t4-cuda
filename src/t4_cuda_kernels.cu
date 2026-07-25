@@ -273,16 +273,16 @@ __device__ __forceinline__ void turing_dequant_w4a16_lop3_8x(
     uint32_t r02, r13, r46, r57;
 
     // Single-cycle LOP3 bitfield extraction & FP16 exponent insertion
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0xF8;" 
+    asm volatile("lop3.b32 %0, %1, %2, %3, 0xEA;" 
         : "=r"(r02) : "r"(packed_w), "r"(mask_even), "r"(magic_exp));
 
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0xF8;" 
+    asm volatile("lop3.b32 %0, %1, %2, %3, 0xEA;" 
         : "=r"(r13) : "r"(packed_w >> 4), "r"(mask_even), "r"(magic_exp));
 
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0xF8;" 
+    asm volatile("lop3.b32 %0, %1, %2, %3, 0xEA;" 
         : "=r"(r46) : "r"(packed_w >> 8), "r"(mask_even), "r"(magic_exp));
 
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0xF8;" 
+    asm volatile("lop3.b32 %0, %1, %2, %3, 0xEA;" 
         : "=r"(r57) : "r"(packed_w >> 12), "r"(mask_even), "r"(magic_exp));
 
     // Vectorized Fused Multiply-Add (Out = Raw * Scale - Bias)

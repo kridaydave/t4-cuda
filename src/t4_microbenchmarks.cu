@@ -3,6 +3,7 @@
 #include <mma.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 using namespace nvcuda;
 
@@ -16,77 +17,72 @@ using namespace nvcuda;
 }
 
 // -------------------------------------------------------------------------
-// 1. Physical Hardware Latency & Bandwidth Measurements
+// 1. Pointer-Chasing Latency Benchmark (L1, L2, DRAM)
 // -------------------------------------------------------------------------
-
-// Benchmark to measure L1, L2, and DRAM latency using pointer chasing
-__global__ void latency_benchmark_kernel(uint32_t *indices, uint64_t *times, int iterations) {
+__global__ void latency_pointer_chase_kernel(const uint32_t * __restrict__ array, uint32_t *d_out, uint64_t *times, int iterations) {
     uint32_t current_idx = threadIdx.x;
     uint64_t start, end;
     
     // Warmup
-    for (int i = 0; i < 10; i++) {
-        current_idx = indices[current_idx];
+    for (int i = 0; i < 100; i++) {
+        current_idx = array[current_idx];
     }
 
     asm volatile("bar.sync 0;");
     asm volatile("mov.u64 %0, %%clock64;" : "=l"(start));
     
+    #pragma unroll 1
     for (int i = 0; i < iterations; i++) {
-        // Dependent memory load forces serialization
-        current_idx = indices[current_idx];
+        // Dependent memory load forces serial memory access
+        current_idx = array[current_idx];
     }
     
     asm volatile("bar.sync 0;");
     asm volatile("mov.u64 %0, %%clock64;" : "=l"(end));
     
     if (threadIdx.x == 0) {
-        times[blockIdx.x] = (end - start) / iterations;
+        times[0] = end - start;
     }
-    // Dummy write to prevent optimization removing the loop
-    indices[0] = current_idx;
+    
+    // Prevent compiler from eliminating memory loads
+    if (threadIdx.x == 0) {
+        d_out[0] = current_idx;
+    }
 }
 
 // -------------------------------------------------------------------------
-// Shared Memory Bank Conflict Stall Cycles Measurement
+// 2. Shared Memory Bank Conflict Stall Cycles Benchmark
 // -------------------------------------------------------------------------
-
-// Kernel to measure shared memory access latency with variable strides
 __global__ void shmem_bank_conflict_kernel(uint32_t *out, uint64_t *times, int stride) {
     __shared__ uint32_t smem[1024];
     int tid = threadIdx.x;
     
-    // Initialize shared memory
     smem[tid] = tid;
     asm volatile("bar.sync 0;");
     
     uint64_t start, end;
-    uint32_t val = 0;
+    uint32_t val = tid;
     
-    // Measure memory accesses
+    asm volatile("bar.sync 0;");
     asm volatile("mov.u64 %0, %%clock64;" : "=l"(start));
     
-    #pragma unroll 100
-    for (int i = 0; i < 100; i++) {
-        val ^= smem[(tid * stride) % 1024];
+    #pragma unroll
+    for (int i = 0; i < 1000; i++) {
+        val ^= smem[(tid * stride + i) % 1024];
     }
     
+    asm volatile("bar.sync 0;");
     asm volatile("mov.u64 %0, %%clock64;" : "=l"(end));
     
     if (tid == 0) {
-        // Store average cycles per access
-        times[0] = (end - start) / 100;
+        times[0] = end - start;
     }
-    
-    // Dummy write to global memory to prevent optimization
     out[tid] = val;
 }
 
 // -------------------------------------------------------------------------
-// 2. Thermal & NVPM Clock Throttling Profiling Script
+// 3. HMMA.884 Tensor Core Power & Boost Clock Throttling Benchmark
 // -------------------------------------------------------------------------
-
-// Kernel to execute dense HMMA.884 instructions to profile clock throttling
 __global__ void hmma_clock_decay_kernel(uint64_t *times, half *A, half *B, float *C, int loops) {
     int tid = threadIdx.x;
     int wid = tid / 32;
@@ -97,7 +93,6 @@ __global__ void hmma_clock_decay_kernel(uint64_t *times, half *A, half *B, float
     
     wmma::fill_fragment(c_frag, 0.0f);
     
-    // Load matrices
     if (wid == 0) {
         wmma::load_matrix_sync(a_frag, A, 16);
         wmma::load_matrix_sync(b_frag, B, 16);
@@ -124,79 +119,118 @@ __global__ void hmma_clock_decay_kernel(uint64_t *times, half *A, half *B, float
     }
 }
 
-// -------------------------------------------------------------------------
-// 3. Production C++ Benchmark Harness
-// -------------------------------------------------------------------------
+// Helper to construct a pointer-chasing linked list
+void setup_pointer_chase(uint32_t *h_arr, size_t num_elements, size_t stride_elements) {
+    for (size_t i = 0; i < num_elements; i++) {
+        h_arr[i] = (uint32_t)((i + stride_elements) % num_elements);
+    }
+}
+
 int main() {
     printf("===================================================\n");
     printf("Tesla T4 (Turing CC 7.5) Hardware Micro-Benchmarks\n");
     printf("===================================================\n");
 
-    // Allocate memory for latency benchmarking
-    int size = 1024 * 1024;
-    uint32_t *d_indices;
     uint64_t *d_times;
-    
-    cudaMalloc(&d_indices, size * sizeof(uint32_t));
-    cudaMalloc(&d_times, 2 * sizeof(uint64_t));
-    
-    // Initialize pointer chasing array on device
-    // (In a real benchmark, this would be set up from host to construct a linked list)
-    
-    printf("\nRunning Shared Memory Bank Conflict Benchmark...\n");
     uint32_t *d_out;
-    uint64_t h_time;
-    cudaMalloc(&d_out, 1024 * sizeof(uint32_t));
-    
-    // Stride 1 = 0 conflicts
-    shmem_bank_conflict_kernel<<<1, 32>>>(d_out, d_times, 1);
-    cudaMemcpy(&h_time, d_times, sizeof(uint64_t), cudaMemcpyDeviceToHost);
-    printf("Stride 1 (0-way conflict): %lu cycles\n", h_time);
-    
-    // Stride 2 = 2-way conflicts
-    shmem_bank_conflict_kernel<<<1, 32>>>(d_out, d_times, 2);
-    cudaMemcpy(&h_time, d_times, sizeof(uint64_t), cudaMemcpyDeviceToHost);
-    printf("Stride 2 (2-way conflict): %lu cycles\n", h_time);
-    
-    // Stride 4 = 4-way conflicts
-    shmem_bank_conflict_kernel<<<1, 32>>>(d_out, d_times, 4);
-    cudaMemcpy(&h_time, d_times, sizeof(uint64_t), cudaMemcpyDeviceToHost);
-    printf("Stride 4 (4-way conflict): %lu cycles\n", h_time);
-    
-    // Stride 32 = 32-way conflicts
-    shmem_bank_conflict_kernel<<<1, 32>>>(d_out, d_times, 32);
-    cudaMemcpy(&h_time, d_times, sizeof(uint64_t), cudaMemcpyDeviceToHost);
-    printf("Stride 32 (32-way conflict): %lu cycles\n", h_time);
+    CHECK_CUDA(cudaMalloc(&d_times, 2 * sizeof(uint64_t)));
+    CHECK_CUDA(cudaMalloc(&d_out, 1024 * sizeof(uint32_t)));
 
-    printf("\nRunning HMMA.884 Clock Throttling Profiling...\n");
+    // ---------------------------------------------------------------------
+    // Part 1: Shared Memory Bank Conflict Benchmark
+    // ---------------------------------------------------------------------
+    printf("\n--- [1] Shared Memory Bank Conflict Benchmark ---\n");
+    int strides[4] = {1, 2, 4, 32};
+    int conflict_labels[4] = {0, 2, 4, 32};
+    int num_accesses = 1000;
+
+    for (int i = 0; i < 4; i++) {
+        uint64_t total_cycles = 0;
+        shmem_bank_conflict_kernel<<<1, 32>>>(d_out, d_times, strides[i]);
+        CHECK_CUDA(cudaDeviceSynchronize());
+        CHECK_CUDA(cudaMemcpy(&total_cycles, d_times, sizeof(uint64_t), cudaMemcpyDeviceToHost));
+        double cycles_per_access = (double)total_cycles / (double)num_accesses;
+        printf("Stride %2d (%2d-way conflict): %6.1f total cycles (~%.2f cycles/access)\n", 
+               strides[i], conflict_labels[i], (double)total_cycles, cycles_per_access);
+    }
+
+    // ---------------------------------------------------------------------
+    // Part 2: Pointer-Chasing Memory Latency Benchmark (L1, L2, GDDR6 DRAM)
+    // ---------------------------------------------------------------------
+    printf("\n--- [2] Pointer-Chasing Memory Latency Benchmark ---\n");
+    
+    // L1 Cache Target (16 KB array < 64 KB L1)
+    size_t l1_size = 4096; 
+    uint32_t *h_l1 = (uint32_t*)malloc(l1_size * sizeof(uint32_t));
+    setup_pointer_chase(h_l1, l1_size, 32);
+    uint32_t *d_l1;
+    CHECK_CUDA(cudaMalloc(&d_l1, l1_size * sizeof(uint32_t)));
+    CHECK_CUDA(cudaMemcpy(d_l1, h_l1, l1_size * sizeof(uint32_t), cudaMemcpyHostToDevice));
+
+    // Warmup L1
+    latency_pointer_chase_kernel<<<1, 32>>>(d_l1, d_out, d_times, 1000);
+    CHECK_CUDA(cudaDeviceSynchronize());
+    
+    uint64_t l1_cycles = 0;
+    latency_pointer_chase_kernel<<<1, 32>>>(d_l1, d_out, d_times, 1000);
+    CHECK_CUDA(cudaDeviceSynchronize());
+    CHECK_CUDA(cudaMemcpy(&l1_cycles, d_times, sizeof(uint64_t), cudaMemcpyDeviceToHost));
+    printf("L1 Data Cache Latency : %.1f cycles / load\n", (double)l1_cycles / 1000.0);
+
+    // GDDR6 DRAM Target (64 MB array > 4 MB L2 Cache)
+    size_t dram_size = 16 * 1024 * 1024; 
+    uint32_t *h_dram = (uint32_t*)malloc(dram_size * sizeof(uint32_t));
+    setup_pointer_chase(h_dram, dram_size, 1024);
+    uint32_t *d_dram;
+    CHECK_CUDA(cudaMalloc(&d_dram, dram_size * sizeof(uint32_t)));
+    CHECK_CUDA(cudaMemcpy(d_dram, h_dram, dram_size * sizeof(uint32_t), cudaMemcpyHostToDevice));
+
+    uint64_t dram_cycles = 0;
+    latency_pointer_chase_kernel<<<1, 32>>>(d_dram, d_out, d_times, 100);
+    CHECK_CUDA(cudaDeviceSynchronize());
+    CHECK_CUDA(cudaMemcpy(&dram_cycles, d_times, sizeof(uint64_t), cudaMemcpyDeviceToHost));
+    printf("GDDR6 DRAM Latency    : %.1f cycles / load\n", (double)dram_cycles / 100.0);
+
+    free(h_l1);
+    free(h_dram);
+    cudaFree(d_l1);
+    cudaFree(d_dram);
+
+    // ---------------------------------------------------------------------
+    // Part 3: Tensor Core HMMA Clock Throttling Profiling
+    // ---------------------------------------------------------------------
+    printf("\n--- [3] HMMA.884 Clock Throttling Profiling ---\n");
     half *d_A, *d_B;
     float *d_C;
-    cudaMalloc(&d_A, 256 * sizeof(half));
-    cudaMalloc(&d_B, 256 * sizeof(half));
-    cudaMalloc(&d_C, 256 * sizeof(float));
+    CHECK_CUDA(cudaMalloc(&d_A, 256 * sizeof(half)));
+    CHECK_CUDA(cudaMalloc(&d_B, 256 * sizeof(half)));
+    CHECK_CUDA(cudaMalloc(&d_C, 256 * sizeof(float)));
     
-    int loops = 100000000;
+    int loops = 10000000;
     
-    // 100% Occupancy (1024 threads)
-    printf("100%% Occupancy (1024 threads/SM)...\n");
+    // 100% Occupancy (1024 threads/SM)
+    printf("Profiling 100%% Occupancy (1024 threads/SM)...\n");
     hmma_clock_decay_kernel<<<40, 1024>>>(d_times, d_A, d_B, d_C, loops);
+    CHECK_CUDA(cudaDeviceSynchronize());
     uint64_t h_times[2];
-    cudaMemcpy(h_times, d_times, 2 * sizeof(uint64_t), cudaMemcpyDeviceToHost);
-    printf("Start Clock: %lu, End Clock: %lu, Diff: %lu cycles\n", h_times[0], h_times[1], h_times[1] - h_times[0]);
+    CHECK_CUDA(cudaMemcpy(h_times, d_times, 2 * sizeof(uint64_t), cudaMemcpyDeviceToHost));
+    printf("  -> 100%% Occupancy Duration: %lu cycles\n", h_times[1] - h_times[0]);
     
-    // 25% Occupancy (256 threads)
-    printf("25%% Occupancy (256 threads/SM)...\n");
+    // 25% Occupancy (256 threads/SM)
+    printf("Profiling 25%% Occupancy (256 threads/SM)...\n");
     hmma_clock_decay_kernel<<<40, 256>>>(d_times, d_A, d_B, d_C, loops);
-    cudaMemcpy(h_times, d_times, 2 * sizeof(uint64_t), cudaMemcpyDeviceToHost);
-    printf("Start Clock: %lu, End Clock: %lu, Diff: %lu cycles\n", h_times[0], h_times[1], h_times[1] - h_times[0]);
-    
-    cudaFree(d_indices);
+    CHECK_CUDA(cudaDeviceSynchronize());
+    CHECK_CUDA(cudaMemcpy(h_times, d_times, 2 * sizeof(uint64_t), cudaMemcpyDeviceToHost));
+    printf("  -> 25%% Occupancy Duration : %lu cycles\n", h_times[1] - h_times[0]);
+
     cudaFree(d_times);
     cudaFree(d_out);
     cudaFree(d_A);
     cudaFree(d_B);
     cudaFree(d_C);
 
-    printf("\nBenchmarking Complete.\n");
+    printf("\n===================================================\n");
+    printf("[BENCHMARK COMPLETE] Empirical Measurements Collected.\n");
+    printf("===================================================\n");
     return 0;
 }

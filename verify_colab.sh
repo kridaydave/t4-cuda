@@ -28,7 +28,6 @@ echo ""
 echo "--> [4/5] Building & Installing PyTorch CUDA Extension (t4_kernels)..."
 cd "$REPO_DIR/src"
 python3 setup.py build_ext --inplace
-# Copy generated .so file to both repo root and src to ensure imports never fail
 cp -f *.so "$REPO_DIR/" 2>/dev/null || true
 cp -f *.so "$REPO_DIR/src/" 2>/dev/null || true
 python3 setup.py develop --user >/dev/null 2>&1 || true
@@ -47,8 +46,8 @@ from harness.verify_dequant import dequantize_u4_reference, dequantize_s4_refere
 
 print('[PyTorch GPU Check] Device Name:', torch.cuda.get_device_name(0))
 
-# 1. Known Answer Test (KAT) Hex Vectors on GPU
-w_test = torch.tensor([0xA7C13E59, 0xF817E29A], dtype=torch.int32, device='cuda')
+# 1. Known Answer Test (KAT) Hex Vectors on GPU (convert uint64 hex to int32 bit pattern)
+w_test = torch.tensor([0xA7C13E59, 0xF817E29A], dtype=torch.int64).to(torch.int32).to('cuda')
 scale_test = torch.tensor([0.25, 0.5], dtype=torch.float16, device='cuda')
 zero_test  = torch.tensor([2.0, 0.0], dtype=torch.float16, device='cuda')
 

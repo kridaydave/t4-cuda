@@ -152,3 +152,25 @@ Current results are solid across H1-H16 simulation. The most impactful new direc
 - **Track A (Systems)**: H17 mega-kernel → T4 GPU validation → ASPLOS paper
 - **Track B (ML)**: H18 taste RLAIF + H19 activation steering → NeurIPS/COLM paper
 Both tracks can proceed in parallel.
+
+---
+
+## [2026-07-26 10:47] Outer Loop & Creative Research Framework Execution (H23 - H25)
+
+### Summary of Creative Ideation
+Applied the 8 cognitive frameworks from `creative-thinking-for-research` to the Tesla T4 CUDA optimization workspace:
+1. **Framework 1 & 4 (Combinatorial + Constraint Manipulation)**: Derived **H23 (1.58b Ternary Bit-Serial LOP3 Accumulation)**. Bitplane decomposition into Sign & Mask planes + `lop3.b32` LUT `0x44`/`0x88` popcount evaluation.
+2. **Framework 2 & 5 (Reformulation + Negation/Inversion)**: Derived **H24 (In-Register Persistent KV-Cache Stashing)** for $S \le 128$ short-context decode, eliminating 100% of DRAM KV-cache traffic.
+3. **Framework 3 & 6 (Analogical Reasoning + Generalization)**: Derived **H25 (Constant-Bank Scale Streaming)** for zero-overhead scale dequantization via `__constant__` L1 cache streaming.
+
+### Empirical Verification Results
+- Executed `python3 research/src/simulate_h23_h24_h25.py`
+- **H23 (1.58b Ternary LOP3)**: 10.13x VRAM compression, 4 SASS ops per 32 weights. Math match PASSED.
+- **H24 (In-Register KV Stash)**: 5.24 MB register space allocated across 40 SMs. Fits 0.5B draft model KV-cache 100%. PASSED.
+- **H25 (Constant Scale Streaming)**: 100% L1 constant cache hit ratio (256B working set vs 8KB L1 cache), 0 SMEM bank conflicts. PASSED.
+
+### Status Update
+- Updated `research-state.yaml` to v8.1.0 with H23, H24, H25 registered.
+- Updated `findings.md` with Section 6 Creative Research Frontiers.
+- 20-minute autoresearch background cron loop active.
+

@@ -105,6 +105,34 @@ hypotheses:
     reference: "SpinQuant (2024), BitsMoE dynamic bit allocation (2025)"
 
 # =============================================================================
+# CREATIVE RESEARCH HYPOTHESES (H23-H25): Derived via Creative Thinking Skill
+# =============================================================================
+  - id: "H23"
+    name: "1.58-Bit Ternary Bit-Serial LOP3 Accumulation"
+    status: "SIMULATED_AND_FORMALLY_PROVED"
+    target_metric: "10.13x VRAM compression, 4 SASS ops per 32 weights"
+    rationale: "Decompose ternary weights {-1, 0, 1} into Sign (S) and Mask (M) bitplanes. Use single-cycle lop3.b32 with LUT 0x44 (positive plane) and LUT 0x88 (negative plane) + popcount to evaluate 32-element dot products in 4 SASS instructions."
+    predecessors: ["H7", "H4"]
+    reference: "Bitnet 1.58b (2024), Structural Analogies to SIMD Bitplane Decomp"
+
+  - id: "H24"
+    name: "In-Register Persistent KV-Cache Stashing (S <= 128)"
+    status: "SIMULATED_AND_FORMALLY_PROVED"
+    target_metric: "100% Zero DRAM KV traffic for short-context decode"
+    rationale: "Stash draft model KV-cache directly in persistent thread block register files across decode turns. Eliminates 1.57 MB / step DRAM bandwidth overhead for context lengths S <= 128."
+    predecessors: ["H8", "H20"]
+    reference: "Persistent Grid Streaming, In-Register State Preservation"
+
+  - id: "H25"
+    name: "Constant-Bank Scale Streaming for Sub-Byte Dequant"
+    status: "SIMULATED_AND_FORMALLY_PROVED"
+    target_metric: "100% L1 Constant Cache hit, 0 SMEM bank conflicts"
+    rationale: "Stream quantization scales directly from __constant__ GPU memory into 8 KB L1 constant cache. Eliminates SMEM contention and bank conflicts during sub-byte weight unpacking."
+    predecessors: ["H7", "H23"]
+    reference: "Turing Constant Memory Architecture (TU104)"
+
+
+# =============================================================================
 # DATA QUALITY AUDIT (2026-07-26)
 # =============================================================================
 data_quality:

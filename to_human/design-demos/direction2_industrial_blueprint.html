@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Direction 2: Industrial Blueprint (Tesla T4 Systems Analysis)</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+  <style>
+    :root {
+      --bg-base: #111318;
+      --bg-surface: #181b22;
+      --bg-card: #20242e;
+      --border: #2d3342;
+      --border-bright: #3b82f6;
+      --text-head: #f3f4f6;
+      --text-body: #9ca3af;
+      --accent-amber: #d97706;
+      --accent-terracotta: #ea580c;
+      --accent-cyan: #0891b2;
+
+      --font-heading: 'Plus Jakarta Sans', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-head);
+      font-family: var(--font-heading);
+      line-height: 1.6;
+      padding: 32px 16px;
+    }
+
+    .blueprint-wrapper {
+      max-width: 1100px;
+      margin: 0 auto;
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      padding: 40px;
+    }
+
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 20px;
+      margin-bottom: 32px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+    }
+
+    .status-tag {
+      background: rgba(217, 119, 6, 0.15);
+      color: var(--accent-amber);
+      border: 1px solid var(--accent-amber);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+
+    h1 {
+      font-size: 2.4rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+
+    .sub-info {
+      color: var(--text-body);
+      font-size: 1rem;
+      margin-bottom: 32px;
+    }
+
+    .grid-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .metric-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 20px;
+      border-radius: 6px;
+    }
+
+    .metric-num {
+      font-family: var(--font-mono);
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--accent-terracotta);
+    }
+
+    .metric-title {
+      font-size: 0.8rem;
+      color: var(--text-body);
+      margin-top: 4px;
+    }
+
+    .code-box {
+      background: #0b0c10;
+      border: 1px solid var(--border);
+      padding: 20px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: #38bdf8;
+      margin-bottom: 32px;
+      overflow-x: auto;
+    }
+
+    .math-card {
+      background: var(--bg-card);
+      border-left: 3px solid var(--accent-cyan);
+      padding: 16px 20px;
+      margin-bottom: 32px;
+    }
+  </style>
+</head>
+<body>
+  <div class="blueprint-wrapper">
+    <div class="header-bar">
+      <div>[SYSTEM SPEC] TESLA_T4_SM75_VERIFICATION</div>
+      <div class="status-tag">HARDWARE_VERIFIED</div>
+    </div>
+
+    <h1>Turing Hardware CUDA Microarchitecture Verification</h1>
+    <div class="sub-info">Physical Google Colab Tesla T4 (TU104, 40 SMs, 70W TDP Cap) Performance Suite</div>
+
+    <div class="grid-metrics">
+      <div class="metric-card">
+        <div class="metric-num">303.4</div>
+        <div class="metric-title">GB/s DRAM BW (94.8%)</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-num">3.08x</div>
+        <div class="metric-title">SASS Inst Reduction</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-num">4.57x</div>
+        <div class="metric-title">Decode Speedup (H17)</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-num">10.13x</div>
+        <div class="metric-title">VRAM Compression (H23)</div>
+      </div>
+    </div>
+
+    <div class="code-box">
+// SASS Inspection: Sub-Byte INT3 Single-Cycle Unpacking
+LOP3.B32 R0, R4, R5, 0xCA; // Single-cycle LUT magic exponent insertion
+HFMA2    R0, R0, scale, zero; // Direct WMMA.16.8.8 Tensor Core feed
+    </div>
+
+    <div class="math-card">
+      $$\text{H23 Ternary Bitplane Dot Product: } \sum \text{POPC}((\neg S \land M) \land X) - \sum \text{POPC}((S \land M) \land X)$$
+    </div>
+  </div>
+</body>
+</html>

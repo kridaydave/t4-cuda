@@ -1,6 +1,6 @@
-version: "7.0.0"
-updated_at: "2026-07-25T14:02:00+05:30"
-phase: "PHYSICAL_T4_EXECUTION_READY"
+version: "8.0.0"
+updated_at: "2026-07-26T10:25:00+05:30"
+phase: "OUTER_LOOP_EXPANSION"
 
 target_hardware:
   name: "NVIDIA Tesla T4"
@@ -15,6 +15,9 @@ target_hardware:
   peak_int8_tops: 130.0
   peak_int4_tops: 260.0
 
+# =============================================================================
+# EXISTING HYPOTHESES (H1-H16): All simulation-verified, awaiting real T4 GPU
+# =============================================================================
 hypotheses:
   - id: "H1"
     name: "128-Bit Vector Load Coalescing & Swizzle Math"
@@ -57,6 +60,59 @@ hypotheses:
     status: "SIMULATED_AND_FORMALLY_PROVED"
     target_metric: "100% Rigor Verification Across All 16 Hypotheses"
 
+# =============================================================================
+# NEW HYPOTHESES (H17-H22): Identified from autoresearch outer loop 2026-07-26
+# =============================================================================
+  - id: "H17"
+    name: "Fused INT3 Dequant + Warp-Specialized GEMV Mega-Kernel"
+    status: "PROPOSED"
+    target_metric: "2.5-4.5x decode speedup vs NF4 BitsAndBytes baseline on T4"
+    rationale: "Combine H7 (INT3 LOP3 dequant) + H8 (producer/consumer warp split) into a single fused decode kernel. Producer warps fetch packed INT3 weights and LOP3-dequant to FP16 in SMEM. Consumer warps run WMMA. Eliminates all intermediate DRAM traffic."
+    predecessors: ["H7", "H8"]
+    reference: "Marlin kernel architecture (async dequant inside GEMM mainloop)"
+
+  - id: "H18"
+    name: "Albert-as-Taste-Judge RLAIF Pipeline"
+    status: "KILLED"
+    rationale: "REMOVED: Taste is human-defined. No model (including frontier APIs) has the specific taste signal the founder wants. The human IS the judge. DPO pairs curated manually are the taste signal. Automated taste judges are not viable for this project."
+
+  - id: "H19"
+    name: "Activation Steering Persona Vectors for Eli/Theo/Albert"
+    status: "PROPOSED"
+    target_metric: "Persona persistence > 0.8 coherence score at turn 10+"
+    rationale: "Extract linear persona directions from model activations (directness, warmth, depth) and apply as inference-time steering vectors. Eliminates system prompt dependency, solves personality drift, and frees context window tokens. 2026 SOTA approach."
+    reference: "Representation Engineering (Zou et al. 2023), Persona Vectors (2026)"
+
+  - id: "H20"
+    name: "Speculative Decoding with INT3-Quantized 0.5B Draft Model"
+    status: "PROPOSED"
+    target_metric: "2-3x latency reduction for Albert (32B) on T4"
+    rationale: "Build ultra-fast 0.5B draft model optimized with H7 INT3 kernels. Fits entirely in L2 cache (4MB). Draft tokens verified by Albert in single forward pass. T4 is memory-bandwidth bound, making speculative decoding especially effective at low batch sizes."
+    reference: "ML-SpecQD, Medusa, EAGLE-3"
+
+  - id: "H21"
+    name: "Automated Format Disambiguation & Persona Persistence Evaluation"
+    status: "PROPOSED"
+    target_metric: "Format bleed rate < 5%, Persona coherence > 0.8 at turn 6+"
+    rationale: "eval_emergence.py currently has no automated scoring and doesn't test for the documented 34.4% tool-wrapper bleed or multi-turn persona drift. Build automated classifiers to measure both."
+    reference: "Phase-2 expansion spec Section 2.1, emergence-experiment-protocol.md"
+
+  - id: "H22"
+    name: "INT3/INT4 QAT Pipeline for Turing-Optimized Deployment"
+    status: "PROPOSED"
+    target_metric: "< 0.5 perplexity degradation vs FP16 at INT3 precision"
+    rationale: "Train models with quantization-aware training specifically for INT3/INT4 deployment via custom LOP3 kernels. Proves sub-4-bit is viable on Turing hardware with minimal quality loss."
+    reference: "SpinQuant (2024), BitsMoE dynamic bit allocation (2025)"
+
+# =============================================================================
+# DATA QUALITY AUDIT (2026-07-26)
+# =============================================================================
+data_quality:
+  execution_verification: "INTENTIONAL_STUB — deferred to Epoch-2 (requires CI infrastructure)"
+  dpo_leak_check: "CLEAN — 0 'rejected' fields found in SFT blend"
+  blended_composition: "24792 base SFT + 2730 cross-axis + 1000 format disambig + 200 multiturn + other = 30200 total"
+  dpo_v2_quality: "1200 pairs across 6 pillars, 7 degradation types — well-structured"
+
 artifacts:
   monograph_pdf: "research/to_human/t4_cuda_monograph.pdf"
   monograph_pages: 11
@@ -69,3 +125,4 @@ artifacts:
   thought_experiments: "research/experiments/EXHAUSTIVE_EVIDENCE_AND_THOUGHT_EXPERIMENTS.md"
   verification_harness: "research/harness/master_experimental_verification.py"
   next_steps_protocol: "research/NEXT_STEPS.md"
+  autoresearch_report: "autoresearch_new_directions.md"

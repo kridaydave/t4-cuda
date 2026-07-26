@@ -51,3 +51,87 @@ All generated code, benchmarks, research papers, and presentation reports are or
 10. **H7 Protocol & Analysis**: [research/experiments/h7-int3-lop3-dequant/protocol.md](file:///home/kriday/Desktop/epoch-1/research/experiments/h7-int3-lop3-dequant/protocol.md) | [research/experiments/h7-int3-lop3-dequant/analysis.md](file:///home/kriday/Desktop/epoch-1/research/experiments/h7-int3-lop3-dequant/analysis.md)
 11. **H8 Protocol & Analysis**: [research/experiments/h8-warp-specialized-splitk/protocol.md](file:///home/kriday/Desktop/epoch-1/research/experiments/h8-warp-specialized-splitk/protocol.md) | [research/experiments/h8-warp-specialized-splitk/analysis.md](file:///home/kriday/Desktop/epoch-1/research/experiments/h8-warp-specialized-splitk/analysis.md)
 12. **H9 Protocol & Analysis**: [research/experiments/h9-fp8-emulated-lop3-rescaling/protocol.md](file:///home/kriday/Desktop/epoch-1/research/experiments/h9-fp8-emulated-lop3-rescaling/protocol.md) | [research/experiments/h9-fp8-emulated-lop3-rescaling/analysis.md](file:///home/kriday/Desktop/epoch-1/research/experiments/h9-fp8-emulated-lop3-rescaling/analysis.md)
+
+---
+
+## 4. New Research Frontiers (Discovered 2026-07-26)
+
+### A. Frontier 1: H17 — Fused INT3 + Warp-Specialized Decode Mega-Kernel
+
+**Current Gap:** H7 (INT3 LOP3 dequant) and H8 (warp specialization) exist as separate hypotheses but have never been fused. The Marlin kernel architecture demonstrates that fusing dequantization *inside* the GEMM mainloop (not as a separate preprocessing step) eliminates intermediate DRAM traffic entirely.
+
+**Proposed Design:**
+- 2 Producer Warps: Fetch packed INT3 weights via `LDG.E.128`, apply `lop3.b32 LUT 0xCA` with constant `0x64046404` in-register, write FP16 values to double-buffered SMEM.
+- 6 Consumer Warps: Execute `WMMA.16.8.8` FP16 Tensor Core operations directly from SMEM.
+- Synchronization: Fine-grained SMEM volatile flag signaling (no `CP.ASYNC` needed on Turing).
+- Target: 2.5-4.5x decode speedup over BitsAndBytes NF4 baseline.
+
+**Why it's novel:** No existing kernel fuses INT3 dequant + warp specialization on pre-Ampere hardware. Marlin requires `CP.ASYNC` (Ampere+). This would be the first pure-software solution.
+
+### B. Frontier 2: H18 — Albert-as-Taste-Judge (Answers the Thesis)
+
+**Current Gap:** The thesis asks "HumanEval measures correctness. How does Epoch measure taste?" — this question has no answer yet.
+
+**Discovery:** Senior SWE-Bench (2026) measures "tasteful solve" rate — top frontier models achieve only ~24%. This means taste is a genuine frontier problem, not a solved one.
+
+**Proposed Pipeline:**
+1. Eli/Theo generate code solutions.
+2. Albert (32B) evaluates on a rubric: idiomatic patterns, abstraction level, error handling, variable naming, architectural elegance.
+3. Pairwise comparison (more reliable than scalar scoring per literature).
+4. Preferences feed into SimPO training for Eli/Theo.
+5. Constitutional rules: PEP-8, OWASP security, framework best practices.
+
+**Why it's novel:** Self-improving taste via RLAIF where the reward model IS one of the production models.
+
+### C. Frontier 3: H19 — Activation Steering Replaces System Prompts
+
+**Current Gap:** Phase-2 identifies personality drift as a top-3 priority. Current approach: system prompts + SFT training.
+
+**Discovery:** 2026 research shows "persona vectors" — linear directions in activation space — provide persistent personality control WITHOUT consuming context tokens.
+
+**Key Technical Details:**
+- **Extraction:** Run contrastive prompt pairs (e.g., "direct/blunt Eli" vs "gentle/hedging") through model. Average activation difference = persona vector.
+- **Layer Selection:** Middle-to-late layers optimal for persona control.
+- **Application:** Add persona vector × scaling coefficient α to activations during generation.
+- **GCAD (2026):** Gated Cropped Attention-Delta prevents coherence collapse in long contexts — steers at attention level, not residual stream.
+- **Open-source:** `IBM/activation-steering` (CAST), `annahdo/implementing_activation_steering`.
+
+**Comparison to current approach:**
+| Method | Drift Resistance | Context Cost | Training Required | Flexibility |
+|---|---|---|---|---|
+| System Prompt | Low | High (~100-200 tokens) | None | Static |
+| LoRA Fine-tuning | High | None | Full training loop | Fixed per adapter |
+| Activation Steering | High | None | Extraction only (no training) | Dynamic per-request |
+
+### D. Frontier 4: H20 — Speculative Decoding for Albert on T4
+
+**Key findings from literature:**
+- Optimal draft model: 0.5-1.5B for 32B target (4B is too large)
+- MUST share exact tokenizer vocabulary
+- T4's memory-bandwidth bottleneck makes speculative decoding especially effective at batch_size=1
+- Alternative: Medusa/EAGLE-3 auxiliary heads bypass the draft model size dilemma
+
+---
+
+## 5. Patterns and Lessons
+
+### What We Know Now (Updated)
+1. The LOP3 bit manipulation approach for sub-byte quantization is **validated by 2025-2026 literature** — similar techniques appear in DeepGEMM, PolyQ, and BitsMoE.
+2. The warp specialization approach for pre-Ampere GPUs is **unique** — ThunderKittens 2.0 dropped Turing support; no framework serves SM 7.5 anymore.
+3. The "taste" problem is a **genuine frontier** — Senior SWE-Bench shows even the best models only achieve ~24% tasteful solve rate.
+4. Activation steering has **matured significantly** — open-source libraries exist, GCAD solves coherence collapse.
+5. The H7+H8 fusion into a single mega-kernel is the **most impactful systems contribution** — no existing kernel does this on pre-Ampere hardware.
+
+### Lessons and Constraints
+- **Simulation is NOT validation**: All H1-H16 claims need real GPU profiling before any paper submission.
+- **DPO data is clean**: The feared DPO→SFT leak does not exist — 0 rejected fields in blend.
+- **Execution verification is intentionally deferred**: Not a bug, not blocking Epoch-1.
+- **ThunderKittens 2.0 dropped Turing**: Can no longer rely on TK for SM 7.5 — must build from scratch.
+- **Draft model for speculative decoding must share tokenizer**: Cannot use arbitrary small models.
+
+### Open Questions
+1. Will H17 mega-kernel achieve the predicted 2.5-4.5x speedup on real hardware?
+2. Can activation steering maintain Eli/Theo/Albert personas over 10+ turns?
+3. Does Albert have enough "taste" to serve as a reliable judge for RLAIF?
+4. What is the perplexity impact of INT3 quantization on Qwen3-4B?
+

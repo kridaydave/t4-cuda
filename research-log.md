@@ -93,3 +93,62 @@
 
 4. **Microarchitectural Simulation Suite**:
    - Built [`src/simulate_h7_h8_h9_benchmarks.py`](file:///home/kriday/Desktop/epoch-1/research/src/simulate_h7_h8_h9_benchmarks.py) to simulate and report exact hardware metrics for H7, H8, H9.
+
+---
+
+## [2026-07-26] AUTORESEARCH OUTER LOOP — NEW DIRECTIONS & FRONTIER EXPANSION
+
+### Context
+Ran a full autoresearch outer loop with 3 parallel research scouts: (1) Web Literature Scout searching 2025-2026 papers, (2) Codebase Gap Analyzer mining the existing workspace, (3) Adjacent Frontier Scout searching for novel intersections.
+
+### Critical Finding: Simulation-Only Status
+**All 16 hypotheses (H1-H16) remain simulation-only.** `train_eli_colab.py` uses standard Unsloth+BitsAndBytes NF4. `infer_eli.py` uses standard HuggingFace generation. No custom CUDA kernels are integrated into the actual pipeline. Real T4 GPU validation (NEXT_STEPS.md 5-stage protocol) is the prerequisite for any systems paper.
+
+### Data Quality Audit (GOOD NEWS)
+- `execution_verified_sft.jsonl` (178 bytes) is an **intentional stub** — deferred to Epoch-2 requiring CI infrastructure.
+- **No DPO leak**: 0 `"rejected"` fields found in the 61MB SFT blend. Clean separation.
+- Blended file composition: 24,792 base SFT + 2,730 cross-axis + 1,000 format disambig + 200 multiturn = 30,200 total.
+- DPO v2: 1,200 pairs across 6 pillars and 7 degradation types — well-structured.
+
+### New Hypotheses Proposed (H17-H22)
+
+1. **H17: Fused INT3 + Warp-Specialized GEMV Mega-Kernel** — Combine H7+H8 into single decode kernel. Producer warps LOP3-dequant packed INT3 weights; consumer warps run WMMA. Based on Marlin kernel architecture patterns. Target: 2.5-4.5x decode speedup.
+
+2. **H18: Albert-as-Taste-Judge RLAIF** — Use 32B Albert to evaluate Eli/Theo outputs on code taste → SimPO/GRPO reward signal. Answers thesis question "How does Epoch measure taste?" New benchmark reference: **Senior SWE-Bench** (2026) measures "tasteful solve" rate (top models achieve only ~24%).
+
+3. **H19: Activation Steering Persona Vectors** — Extract linear persona directions from activations (directness, warmth, depth) and apply at inference. Solves personality drift WITHOUT consuming context tokens. Key reference: GCAD (2026) prevents coherence collapse in long contexts. Open-source: `IBM/activation-steering` (CAST), `annahdo/implementing_activation_steering`.
+
+4. **H20: Speculative Decoding with INT3 Draft** — 0.5B draft model with H7 INT3 kernels, fits in L2 cache. Optimal draft/target ratio: 0.5-1.5B draft for 32B Albert. Both models MUST share tokenizer. Alternative: Medusa/EAGLE-3 auxiliary heads.
+
+5. **H21: Automated Format Disambiguation & Persona Eval** — Current `eval_emergence.py` has no automated scoring, no format-bleed detection, no persona drift measurement. Build classifiers for the documented 34.4% tool-wrapper bleed.
+
+6. **H22: INT3/INT4 QAT for Turing** — Train with quantization awareness specifically for deployment via custom LOP3 kernels.
+
+### Key 2025-2026 Literature Discoveries
+
+**Quantization:**
+- ARCQuant/ScaleSweep: FP4 (NVFP4) with block-wise scaling (backportable to T4 via LOP3)
+- BitsMoE: Signed INT3 with dynamic bit allocation per block — validates our H7 approach
+- DeepGEMM/PolyQ: LUT-based sub-byte kernels for non-native hardware
+
+**Personality/Taste:**
+- **Activation Steering Persona Vectors** (2026): Linear directions in activation space for personality traits
+- **GCAD** (2026): Gated Cropped Attention-Delta solves coherence collapse in long contexts
+- **Senior SWE-Bench** (2026): New benchmark for "tasteful" code, top models only ~24%
+- **Software Constitutions (CAI)**: PEP-8/OWASP as constitutional rules for RLAIF
+
+**Fused Kernels:**
+- Lazy Pre-Norm & Multi-CTA Norm Fusion: Extends H6 with norm fusion for more DRAM savings
+- Kernel-Smith: RL-based auto-generation of verified CUDA kernels
+- ThunderKittens 2.0: Dropped Turing support (Hopper/Blackwell only), but register layout logic backportable
+
+**Speculative Decoding:**
+- Optimal 0.5-1.5B draft for 32B target, MUST share tokenizer
+- Medusa/EAGLE-3 as auxiliary head alternative (no separate draft model needed)
+- T4 especially suited due to memory-bandwidth bottleneck at batch_size=1
+
+### Direction Decision: BROADEN
+Current results are solid across H1-H16 simulation. The most impactful new directions are:
+- **Track A (Systems)**: H17 mega-kernel → T4 GPU validation → ASPLOS paper
+- **Track B (ML)**: H18 taste RLAIF + H19 activation steering → NeurIPS/COLM paper
+Both tracks can proceed in parallel.

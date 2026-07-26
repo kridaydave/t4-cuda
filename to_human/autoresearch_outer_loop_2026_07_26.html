@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Epoch-1 Autoresearch: New Directions & Frontier Expansion</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #0a0e1a;
+  --bg-card: #111827;
+  --bg-card-hover: #1a2234;
+  --border: #1e293b;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent-blue: #3b82f6;
+  --accent-purple: #8b5cf6;
+  --accent-green: #10b981;
+  --accent-amber: #f59e0b;
+  --accent-red: #ef4444;
+  --accent-cyan: #06b6d4;
+  --gradient-1: linear-gradient(135deg, #3b82f6, #8b5cf6);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', sans-serif; line-height: 1.6; }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+.hero { padding: 60px 0 40px; text-align: center; position: relative; }
+.hero::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 600px; height: 600px; background: radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%); pointer-events: none; }
+.hero h1 { font-size: 2.8rem; font-weight: 800; background: var(--gradient-1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 12px; }
+.hero .subtitle { font-size: 1.15rem; color: var(--text-secondary); }
+.hero .date { margin-top: 16px; font-size: 0.85rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+.section { margin: 48px 0; }
+.section-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; }
+.section-title .icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+.findings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin-bottom: 32px; }
+.finding-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; transition: all 0.3s ease; }
+.finding-card:hover { transform: translateY(-2px); border-color: var(--accent-purple); box-shadow: 0 8px 32px rgba(139,92,246,0.15); }
+.severity { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+.severity-critical { background: rgba(239,68,68,0.15); color: var(--accent-red); border: 1px solid rgba(239,68,68,0.3); }
+.severity-new { background: rgba(16,185,129,0.15); color: var(--accent-green); border: 1px solid rgba(16,185,129,0.3); }
+.severity-warning { background: rgba(245,158,11,0.15); color: var(--accent-amber); border: 1px solid rgba(245,158,11,0.3); }
+.finding-card h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: 8px; }
+.finding-card p { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; }
+.hypothesis-table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--bg-card); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+.hypothesis-table th { background: rgba(59,130,246,0.1); padding: 12px 16px; text-align: left; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--accent-blue); border-bottom: 1px solid var(--border); }
+.hypothesis-table td { padding: 10px 16px; font-size: 0.88rem; border-bottom: 1px solid rgba(30,41,59,0.5); color: var(--text-secondary); }
+.hypothesis-table tr:last-child td { border-bottom: none; }
+.hypothesis-table tr:hover { background: var(--bg-card-hover); }
+.status-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+.status-sim { background: rgba(245,158,11,0.15); color: var(--accent-amber); }
+.status-proposed { background: rgba(139,92,246,0.15); color: var(--accent-purple); }
+.arch-diagram { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 32px; margin: 24px 0; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.8; color: var(--accent-cyan); overflow-x: auto; white-space: pre; }
+.tracks { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 768px) { .tracks { grid-template-columns: 1fr; } }
+.track-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+.track-card h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.priority-list { list-style: none; padding: 0; }
+.priority-list li { padding: 10px 0; border-bottom: 1px solid rgba(30,41,59,0.4); display: flex; gap: 12px; align-items: flex-start; font-size: 0.9rem; color: var(--text-secondary); }
+.priority-list li:last-child { border-bottom: none; }
+.p-badge { flex-shrink: 0; width: 32px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+.p0 { background: rgba(239,68,68,0.2); color: var(--accent-red); }
+.p1 { background: rgba(245,158,11,0.2); color: var(--accent-amber); }
+.p2 { background: rgba(59,130,246,0.2); color: var(--accent-blue); }
+.p3 { background: rgba(100,116,139,0.2); color: var(--text-muted); }
+.lit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.lit-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 18px; transition: all 0.2s; }
+.lit-card:hover { border-color: var(--accent-cyan); box-shadow: 0 4px 16px rgba(6,182,212,0.1); }
+.lit-card .category { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.lit-card h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 6px; }
+.lit-card p { font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; }
+.compare-table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--bg-card); border-radius: 10px; overflow: hidden; border: 1px solid var(--border); margin: 16px 0; }
+.compare-table th { background: rgba(6,182,212,0.1); padding: 10px 14px; text-align: left; font-size: 0.78rem; font-weight: 600; color: var(--accent-cyan); border-bottom: 1px solid var(--border); }
+.compare-table td { padding: 8px 14px; font-size: 0.85rem; border-bottom: 1px solid rgba(30,41,59,0.4); color: var(--text-secondary); }
+.compare-table tr:last-child td { border-bottom: none; }
+.check { color: var(--accent-green); }
+.cross { color: var(--accent-red); }
+.footer { text-align: center; padding: 40px 0; color: var(--text-muted); font-size: 0.8rem; border-top: 1px solid var(--border); margin-top: 60px; }
+</style>
+</head>
+<body>
+<div class="container">
+<div class="hero">
+  <h1>Epoch-1 Autoresearch</h1>
+  <p class="subtitle">New Directions &amp; Frontier Expansion — Outer Loop Reflection</p>
+  <p class="date">2026-07-26 · Phase: OUTER_LOOP_EXPANSION · v8.0.0</p>
+</div>
+
+<div class="section">
+  <h2 class="section-title"><span class="icon" style="background:rgba(239,68,68,0.15)">⚡</span> Top 5 Findings</h2>
+  <div class="findings-grid">
+    <div class="finding-card">
+      <span class="severity severity-critical">Critical</span>
+      <h3>H1-H16: Simulation Only — Zero Real GPU</h3>
+      <p>All 16 CUDA hypotheses are simulated but have never run on actual T4 hardware. Training uses standard Unsloth/BitsAndBytes. No paper is publishable without real profiling.</p>
+    </div>
+    <div class="finding-card">
+      <span class="severity severity-warning">Resolved</span>
+      <h3>Training Data: Verification Stub is Intentional</h3>
+      <p>The 178-byte verification file is an intentional stub deferred to Epoch-2. No DPO leak (0 rejected in SFT). Pipeline is clean.</p>
+    </div>
+    <div class="finding-card">
+      <span class="severity severity-new">New Discovery</span>
+      <h3>Activation Steering > System Prompts (2026)</h3>
+      <p>Persona vectors provide persistent personality control WITHOUT consuming context tokens. GCAD solves coherence collapse. Open-source: IBM/activation-steering.</p>
+    </div>
+    <div class="finding-card">
+      <span class="severity severity-new">New Direction</span>
+      <h3>Albert-as-Taste-Judge Creates RLAIF Loop</h3>
+      <p>Use 32B Albert to score Eli/Theo on code taste. Senior SWE-Bench (2026) shows taste is a genuine frontier (top models ~24%).</p>
+    </div>
+    <div class="finding-card">
+      <span class="severity severity-new">New Direction</span>
+      <h3>H7+H8 Mega-Kernel for 2.5-4.5x Inference</h3>
+      <p>Fuse INT3 dequant + warp specialization into single decode kernel. First pure-software solution for pre-Ampere hardware.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2 class="section-title"><span class="icon" style="background:rgba(59,130,246,0.15)">🧬</span> All 22 Hypotheses</h2>
+  <table class="hypothesis-table">
+    <thead><tr><th>ID</th><th>Hypothesis</th><th>Status</th><th>Target Metric</th></tr></thead>
+    <tbody>
+      <tr><td>H1</td><td>128-Bit Vector Load Coalescing</td><td><span class="status-badge status-sim">SIMULATED</span></td><td>0 Bank Conflicts</td></tr>
+      <tr><td>H2</td><td>Register Double-Buffering</td><td><span class="status-badge status-sim">SIMULATED</span></td><td>Stalls &lt; 15 cycles</td></tr>
+      <tr><td>H3</td><td>FlashAttention-2 FP16 Kernel</td><td><span class="status-badge status-sim">SIMULATED</span></td><td>Error &lt; 1e-4</td></tr>
+      <tr><td>H4</td><td>INT4 LOP3 0x6A Unpacking</td><td><span class="status-badge status-sim">SIMULATED</span></td><td>2.50x Speedup</td></tr>
+      <tr><td>H5</td><td>70W Power-Aware Occupancy</td><td><span class="status-badge status-sim">SIMULATED</span></td><td>61.4W, 1590 MHz</td></tr>
+      <tr><td>H6</td><td>Fused Backward GEMM + AdamW</td><td><span class="status-badge status-sim">SIMULATED</span></td><td>21.4% DRAM ↓</td></tr>
+      <tr><td>H7</td><td>INT3 LOP3 LUT 0xCA</td><td><span class="status-badge status-sim">SIMULATED</span></td><td>3.08x, 303 GB/s</td></tr>
+      <tr><td>H8</td><td>Warp Specialization Split-K</td><td><span class="status-badge status-sim">SIMULATED</span></td><td>94.2% Stall ↓</td></tr>
+      <tr><td>H9</td><td>FP8 E4M3 LOP3 Rescaling</td><td><span class="status-badge status-sim">SIMULATED</span></td><td>11x Inst Speedup</td></tr>
+      <tr><td>H10-16</td><td>Extended Frontiers</td><td><span class="status-badge status-sim">SIMULATED</span></td><td>100% Rigor</td></tr>
+      <tr style="background:rgba(139,92,246,0.05)"><td><strong>H17</strong></td><td>🆕 INT3 + Warp-Spec Mega-Kernel</td><td><span class="status-badge status-proposed">PROPOSED</span></td><td>2.5-4.5x decode ↑</td></tr>
+      <tr style="background:rgba(139,92,246,0.05)"><td><strong>H18</strong></td><td>🆕 Albert Taste-Judge RLAIF</td><td><span class="status-badge status-proposed">PROPOSED</span></td><td>15%+ taste ↑</td></tr>
+      <tr style="background:rgba(139,92,246,0.05)"><td><strong>H19</strong></td><td>🆕 Activation Steering Personas</td><td><span class="status-badge status-proposed">PROPOSED</span></td><td>Coherence &gt; 0.8</td></tr>
+      <tr style="background:rgba(139,92,246,0.05)"><td><strong>H20</strong></td><td>🆕 Speculative Decoding INT3</td><td><span class="status-badge status-proposed">PROPOSED</span></td><td>2-3x Albert latency ↓</td></tr>
+      <tr style="background:rgba(139,92,246,0.05)"><td><strong>H21</strong></td><td>🆕 Format + Persona Eval</td><td><span class="status-badge status-proposed">PROPOSED</span></td><td>Bleed &lt; 5%</td></tr>
+      <tr style="background:rgba(139,92,246,0.05)"><td><strong>H22</strong></td><td>🆕 INT3/INT4 QAT Pipeline</td><td><span class="status-badge status-proposed">PROPOSED</span></td><td>&lt; 0.5 PPL ↓</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h2 class="section-title"><span class="icon" style="background:rgba(6,182,212,0.15)">🧠</span> Activation Steering vs Current Approach</h2>
+  <table class="compare-table">
+    <thead><tr><th>Method</th><th>Drift Resistance</th><th>Context Cost</th><th>Training</th><th>Flexibility</th></tr></thead>
+    <tbody>
+      <tr><td>System Prompt</td><td class="cross">Low — drifts</td><td class="cross">~200 tokens</td><td class="check">None</td><td class="cross">Static</td></tr>
+      <tr><td>LoRA Fine-tuning</td><td class="check">High</td><td class="check">None</td><td class="cross">Full loop</td><td class="cross">Fixed</td></tr>
+      <tr><td><strong>Activation Steering</strong></td><td class="check">High</td><td class="check">None</td><td class="check">Extract only</td><td class="check">Dynamic</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h2 class="section-title"><span class="icon" style="background:rgba(16,185,129,0.15)">🎯</span> H18: Albert-as-Taste-Judge</h2>
+  <div class="arch-diagram">  ┌──────────────────────────────────────────────────────────────────┐
+  │                     TASTE RLAIF PIPELINE                         │
+  │                                                                  │
+  │   ┌──────────┐     generates     ┌───────────────────────┐      │
+  │   │ Eli (4B)  │ ─── code ──────▶ │                       │      │
+  │   └──────────┘                   │   Albert (32B)        │      │
+  │                                  │   Taste Judge         │      │
+  │   ┌──────────┐     generates     │                       │      │
+  │   │Theo (12B) │ ─── code ──────▶ │   Rubric:             │      │
+  │   └──────────┘                   │   • Idiomatic style   │      │
+  │                                  │   • Abstraction       │      │
+  │                                  │   • Error handling    │      │
+  │                                  │   • Architecture      │      │
+  │                                  └─────────┬─────────────┘      │
+  │                                            │                     │
+  │                                   pairwise preferences           │
+  │                                            │                     │
+  │                                            ▼                     │
+  │                                  ┌───────────────────┐           │
+  │                                  │  SimPO / GRPO      │           │
+  │                                  │  Training Loop     │           │
+  │                                  └─────────┬─────────┘           │
+  │                                            │                     │
+  │                                     improved weights             │
+  │                                            │                     │
+  │                                            ▼                     │
+  │                                  ┌───────────────────┐           │
+  │                                  │  Next Generation   │           │
+  │                                  │  Eli v2 / Theo v2  │           │
+  │                                  └───────────────────┘           │
+  └──────────────────────────────────────────────────────────────────┘</div>
+</div>
+
+<div class="section">
+  <h2 class="section-title"><span class="icon" style="background:rgba(245,158,11,0.15)">🗺️</span> Two-Track Roadmap</h2>
+  <div class="tracks">
+    <div class="track-card" style="border-top: 3px solid var(--accent-blue);">
+      <h3>🔧 Track A: Systems Paper (ASPLOS)</h3>
+      <ul class="priority-list">
+        <li><span class="p-badge p0">P0</span> Get T4 GPU → run 5-stage validation</li>
+        <li><span class="p-badge p1">P1</span> Build H17 mega-kernel (INT3 + Warp Spec)</li>
+        <li><span class="p-badge p2">P2</span> Perplexity/Pass@1 ablation for INT3, FP8</li>
+        <li><span class="p-badge p3">P3</span> ncu profiling → roofline plots</li>
+      </ul>
+    </div>
+    <div class="track-card" style="border-top: 3px solid var(--accent-purple);">
+      <h3>🧠 Track B: ML Paper (NeurIPS/COLM)</h3>
+      <ul class="priority-list">
+        <li><span class="p-badge p0">P0</span> Verify training data execution quality</li>
+        <li><span class="p-badge p1">P1</span> Build Albert-as-Taste-Judge RLAIF</li>
+        <li><span class="p-badge p2">P2</span> Format disambiguation + persona eval</li>
+        <li><span class="p-badge p3">P3</span> Activation steering for personas</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2 class="section-title"><span class="icon" style="background:rgba(139,92,246,0.15)">📚</span> Key Literature (2025-2026)</h2>
+  <div class="lit-grid">
+    <div class="lit-card"><div class="category" style="color:var(--accent-amber)">Quantization</div><h4>ARCQuant / BitsMoE / PolyQ</h4><p>FP4 block-wise scaling, signed INT3 dynamic bit allocation, LUT sub-byte kernels. All validate our LOP3 approach.</p></div>
+    <div class="lit-card"><div class="category" style="color:var(--accent-cyan)">Personality</div><h4>GCAD &amp; Persona Vectors (2026)</h4><p>Gated Cropped Attention-Delta prevents coherence collapse. Steers at attention level, not residual stream.</p></div>
+    <div class="lit-card"><div class="category" style="color:var(--accent-green)">Code Quality</div><h4>Senior SWE-Bench (2026)</h4><p>First "taste" benchmark. Top frontier models only ~24% tasteful solve rate. Taste is a genuine frontier.</p></div>
+    <div class="lit-card"><div class="category" style="color:var(--accent-purple)">RLAIF</div><h4>Software Constitutions (CAI)</h4><p>PEP-8 / OWASP as constitutional rules. Self-critique → revise → preference data. Security by construction.</p></div>
+    <div class="lit-card"><div class="category" style="color:var(--accent-red)">Frameworks</div><h4>ThunderKittens 2.0 Drops Turing</h4><p>Jan 2026: SM 7.5 dropped. Hopper/Blackwell only. Register layout logic still backportable manually.</p></div>
+    <div class="lit-card"><div class="category" style="color:var(--accent-blue)">Fused Kernels</div><h4>Kernel-Smith (RL Kernel Gen)</h4><p>RL auto-generates verified CUDA kernels. Could use Albert to generate PTX with latency as reward signal.</p></div>
+    <div class="lit-card"><div class="category" style="color:var(--accent-amber)">Spec Decoding</div><h4>Optimal Draft Model Sizing</h4><p>0.5-1.5B draft for 32B target. MUST share tokenizer. Medusa/EAGLE-3 as alternatives.</p></div>
+    <div class="lit-card"><div class="category" style="color:var(--accent-cyan)">Steering Libraries</div><h4>IBM/activation-steering (CAST)</h4><p>Conditional Activation Steering: dynamic, context-aware personality control. Production-ready open-source.</p></div>
+  </div>
+</div>
+
+<div class="section">
+  <h2 class="section-title"><span class="icon" style="background:rgba(16,185,129,0.15)">✅</span> Data Quality Audit</h2>
+  <div class="findings-grid">
+    <div class="finding-card"><span class="severity severity-new">Clean</span><h3>No DPO Leak in SFT Blend</h3><p>0 'rejected' fields found in 61MB blended file. DPO and SFT properly separated.</p></div>
+    <div class="finding-card"><span class="severity severity-warning">Stub</span><h3>execution_verified_sft.jsonl</h3><p>178-byte intentional stub: "DEFERRED TO EPOCH-2: Requires CI infrastructure." Not blocking.</p></div>
+    <div class="finding-card"><span class="severity severity-new">Verified</span><h3>DPO v2 Well-Structured</h3><p>1,200 pairs across 6 pillars and 7 degradation types. Good coverage.</p></div>
+    <div class="finding-card"><span class="severity severity-new">Verified</span><h3>Blend Composition Correct</h3><p>24,792 base + 5,408 augmentation = 30,200 total. All extra rows accounted for.</p></div>
+  </div>
+</div>
+</div>
+
+<div class="footer">
+  <p>Epoch-1 Autoresearch · Outer Loop Reflection · 2026-07-26T10:25+05:30</p>
+  <p style="margin-top:4px;">3 parallel research scouts · Web + Codebase + Adjacent Frontiers</p>
+</div>
+</body>
+</html>

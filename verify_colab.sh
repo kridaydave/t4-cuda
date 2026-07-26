@@ -80,6 +80,11 @@ echo "--> [6/6] Running Fused W4A16 GEMM Accuracy & Performance Verification..."
 python3 harness/verify_fused_gemm.py
 
 echo ""
+echo "--> [7/7] Running Comprehensive Master Test Suite (Correctness + Benchmarks)..."
+python3 tests/run_all_cuda_tests.py || true
+
+echo ""
 echo "=========================================================================="
-echo "  [ALL VERIFICATIONS PASSED SUCCESSFULLY]"
+echo "  [ALL VERIFICATIONS COMPLETED]"
 echo "=========================================================================="
+

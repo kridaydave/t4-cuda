@@ -174,3 +174,65 @@ Applied the 8 cognitive frameworks from `creative-thinking-for-research` to the 
 - Updated `findings.md` with Section 6 Creative Research Frontiers.
 - 20-minute autoresearch background cron loop active.
 
+---
+
+## [2026-07-29] Full Literature Sweep, Novelty Re-Audit & H26-H33 Frontier Registration
+
+### Method
+Three parallel research scouts swept arXiv/GitHub 2025-2026 in parallel:
+(A) kernels & quantization, (B) speculative decode & KV residency, (C) persona steering & eval.
+Full deduplicated report: `literature/survey_2026_07_29_novelty_reaudit_and_new_gaps.md`.
+Working notes file: `literature/survey_2026_07_29_full_sweep_notes.md` (scout raw outputs).
+
+### Novelty re-audit verdicts (H4-H25)
+- **H8 NOVEL and value UP**: 2026 warp-spec literature (Tawa CGO'26, Cypress, Sim-FA, SM90 SwiGLU pingpong) is 100% Hopper TMA/wgmma. Ours is the "warp specialization without async hardware" contrarian result.
+- **H7 PARTIALLY-SCOOPED as folklore / still publishable**: LOP3+magic-exponent dequant is production folklore (FasterTransformer/AWQ/Marlin) but never characterized in a paper. INT3-specific LUTs + measured SASS counts unclaimed.
+- **H9 NOVEL**: no FP8-on-legacy-tensor-core work found. Must document E4M3 denormal/NaN re-bias exactness.
+- **H23 NOVEL (GPU)**: bitnet.cpp/T-MAC ternary = CPU LUT; Intel = Xe2 GPU. No CUDA ternary bit-serial popcount kernel exists.
+- **H24 NOVEL (per sweep)**: no published register-resident KV cache found.
+- **H25 DEMOTED**: folded into H17 as measured micro-technique (constant-bank vs SMEM scale-load ablation).
+- **H5 NOVEL (mechanism)**: occupancy-as-DVFS-controller on 70W parts unclaimed.
+- **H17 NOVEL — strongest flagship claim**: fused-dequant GEMV decode space empty pre/post Ampere. New baseline requirement: llama.cpp CUDA INT3 path, not just BitsAndBytes NF4.
+- **H20 REFRAMED**: ML-SpecQD/QuantSpec/SPEQ/Quasar own generic quantized-draft SD. Now "acceptance-first quantized drafting": INT3 acceptance sweep + QAT-against-agreement (top-k KL to target), batch-1, bandwidth-bound.
+- **H19 PARTIALLY-SCOOPED w/ whitespace**: GCAD owns generic multi-turn numbers; PSR (ICML'26) shows token-uniform steering unfaithful. Open: multi-persona coexistence (H31), INT3 steering (H26).
+- **H21 HALF-scooped/half-novel**: adopt ContextEcho harness + standard metrics (GCAD turn-N, Assistant-Axis, Abdulhai triplet); format-bleed coinage is ours (H32).
+
+### Read-between-the-lines findings (cross-sweep synthesis)
+1. Quantization × activation-steering is unstudied and load-bearing (zero arXiv hits) → **H26** (gates H19).
+2. MXFP4 wave (gpt-oss, MR-GPTQ, MicroMix; E8M0 scale = exponent add) makes T4 LOP3 machinery load-bearing → **H27**.
+3. Ternary inference stayed CPU-centric; Microsoft never shipped CUDA 1.58b → **H29** (W1.58A4 CUDA).
+4. Acceptance rate, not perplexity, is the right draft-quantization loss → folded into reframed H20.
+5. Persona superposition fails in documented ways (Creative Collision dominance, 53-trait composition collapse, SPASM echoing) with no published fix → **H31**.
+6. Steering rots: optimal layer shifts <=17 positions under perturbation; ASTEER predicts steerability from early hidden states → **H33**.
+7. vLLM production SD study: verification dominates, acceptance varies by position → position-aware tree shaping for bandwidth-bound decode → **H28**.
+8. Taste axis still vacant (Beyond Resolved Rate confirms resolved-rate ≠ taste). H18 kill decision confirmed.
+
+### Consolidations executed
+- H25 folded into H17 (micro-technique).
+- H20 reframed (acceptance-first quantized drafting).
+- H19 gated behind H26.
+- H21 adopts standard metrics + H32 format-bleed coinage.
+- H17 baseline expanded to include llama.cpp CUDA INT3.
+
+### New hypotheses registered (H26-H33)
+- **H26** Quantization-aware persona vector extraction/verification (de-risks H19; zero prior work).
+- **H27** Rotation-fused MXFP4-W/FP16-A GEMV for T4 (rides gpt-oss MXFP4 wave onto legacy HW).
+- **H28** Position-aware speculative-tree shaping for bandwidth-bound decode.
+- **H29** W1.58A4 CUDA serving kernels (INT4-act LUT × ternary bitplanes, popcount accumulation).
+- **H30** aref-lite: compiler-generated software warp-spec for pre-async GPUs.
+- **H31** Multi-persona coexistence without directional dominance.
+- **H32** Format-bleed rate as first-class persistence metric + leading drift indicator (folds into H21).
+- **H33** Steerability regression probes for deployment.
+
+### New priority order (system-side; persona-side sequence below)
+1. **P0**: Physical T4 verification (NEXT_STEPS.md — unchanged; still unblocks everything).
+2. **P1 Systems**: H17 flagship → H27 (MXFP4) → H29 (W1.58A4 CUDA) → H28 (spec-decode roofline).
+3. **P2 Persona**: H26 first → H19 engineering → H21 eval (with H32 metric) → H31 coexistence → H33 regression probes.
+4. **Deferred**: H18 stays KILLED; H30 aspirational until H8 physically verified.
+
+### Files updated
+- `literature/survey_2026_07_29_novelty_reaudit_and_new_gaps.md` (new — full report)
+- `research-state.yaml` → v9.0.0
+- `findings.md` → Section 7
+- `research-log.md` → this entry
+

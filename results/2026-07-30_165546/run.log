@@ -1,0 +1,263 @@
+
+==============================================================================
+  Tesla T4 EMPIRICAL VALIDATION RUN
+==============================================================================
+  results dir : /content/repo/research/results/2026-07-30_165546
+  started     : 2026-07-30T16:55:46.544259
+
+==============================================================================
+  STAGE 0 — Environment & Provenance Stamp
+==============================================================================
+  timestamp_utc             : 2026-07-30T16:55:46.575437+00:00
+  hostname                  : bd6a2dff8fa8
+  platform                  : Linux-6.6.122+-x86_64-with-glibc2.35
+  python                    : 3.12.13
+  git_sha                   : unknown
+  git_branch                : unknown
+  git_dirty                 : True
+  nvcc_path                 : /usr/local/cuda/bin/nvcc
+  nvcc_version              : ['Cuda compilation tools, release 12.8, V12.8.93']
+  nvidia_smi_path           : /opt/bin/nvidia-smi
+  gpu                       : Tesla T4, 580.82.07, 15360 MiB, 70.00 W, 7.5
+  torch_version             : 2.11.0+cu128
+  torch_cuda_available      : True
+  torch_cuda_version        : 12.8
+  torch_device_name         : Tesla T4
+  torch_compute_capability  : 7.5
+
+==============================================================================
+  STAGE 1 — Static Compile Audit (nvcc -Xptxas -v)
+==============================================================================
+
+--- Compiling lop3_dequant.cu (sm_75, -Xptxas -v) ---
+ptxas info    : 0 bytes gmem
+ptxas info    : Compiling entry function '_Z22lop3_dequant_s4_kernelPKjP6__halfPKS1_S4_i' for 'sm_75'
+ptxas info    : Function properties for _Z22lop3_dequant_s4_kernelPKjP6__halfPKS1_S4_i
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 16 registers, used 0 barriers, 388 bytes cmem[0]
+ptxas info    : Compile time = 73.533 ms
+ptxas info    : Compiling entry function '_Z22lop3_dequant_u4_kernelPKjP6__halfPKS1_S4_i' for 'sm_75'
+ptxas info    : Function properties for _Z22lop3_dequant_u4_kernelPKjP6__halfPKS1_S4_i
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 16 registers, used 0 barriers, 388 bytes cmem[0]
+ptxas info    : Compile time = 2.452 ms
+
+
+--- Compiling fused_w4a16_gemm.cu (sm_75, -Xptxas -v) ---
+ptxas info    : 0 bytes gmem
+ptxas info    : Compiling entry function '_Z26fused_w4a16_gemv_s4_kernelPK6__halfPKjS1_S1_PS_iii' for 'sm_75'
+ptxas info    : Function properties for _Z26fused_w4a16_gemv_s4_kernelPK6__halfPKjS1_S1_PS_iii
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 30 registers, used 1 barriers, 1024 bytes smem, 404 bytes cmem[0]
+ptxas info    : Compile time = 11.421 ms
+ptxas info    : Compiling entry function '_Z26fused_w4a16_gemv_u4_kernelPK6__halfPKjS1_S1_PS_iii' for 'sm_75'
+ptxas info    : Function properties for _Z26fused_w4a16_gemv_u4_kernelPK6__halfPKjS1_S1_PS_iii
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 30 registers, used 1 barriers, 1024 bytes smem, 404 bytes cmem[0]
+ptxas info    : Compile time = 10.713 ms
+
+
+  [H4_signed_int4_lop3] worst registers/thread = 30 (limit 64) -> CONFIRM
+  [H4_signed_int4_lop3] worst spill bytes      = 0 (limit 0) -> CONFIRM
+
+  [H4_companion_unsigned_int4_lop3] worst registers/thread = 30 (limit 64) -> CONFIRM
+  [H4_companion_unsigned_int4_lop3] worst spill bytes      = 0 (limit 0) -> CONFIRM
+
+==============================================================================
+  STAGE 2 — Build PyTorch CUDA Extension (t4_kernels)
+==============================================================================
+
+--- python3 setup.py build_ext --inplace ---
+running build_ext
+W0730 16:55:54.255000 2278 torch/utils/cpp_extension.py:680] Attempted to use ninja as the BuildExtension backend but we could not find ninja.. Falling back to using the slow distutils backend.
+building 't4_kernels' extension
+creating build/temp.linux-x86_64-cpython-312/content/repo/research/src
+creating build/temp.linux-x86_64-cpython-312/content/repo/research/src/kernels
+x86_64-linux-gnu-g++ -fno-strict-overflow -Wsign-compare -DNDEBUG -g -O2 -Wall -g -fstack-protector-strong -Wformat -Werror=format-security -g -fwrapv -O2 -fPIC -I/usr/local/lib/python3.12/dist-packages/torch/include -I/usr/local/lib/python3.12/dist-packages/torch/include/torch/csrc/api/include -I/usr/local/cuda/include -I/usr/include/python3.12 -c /content/repo/research/src/bindings.cpp -o build/temp.linux-x86_64-cpython-312/content/repo/research/src/bindings.o -O3 -DTORCH_API_INCLUDE_EXTENSION_H -DTORCH_EXTENSION_NAME=t4_kernels -std=c++17
+/usr/local/cuda/bin/nvcc -I/usr/local/lib/python3.12/dist-packages/torch/include -I/usr/local/lib/python3.12/dist-packages/torch/include/torch/csrc/api/include -I/usr/local/cuda/include -I/usr/include/python3.12 -c /content/repo/research/src/kernels/fused_w4a16_gemm.cu -o build/temp.linux-x86_64-cpython-312/content/repo/research/src/kernels/fused_w4a16_gemm.o -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr --compiler-options '-fPIC' -O3 -gencode=arch=compute_75,code=sm_75 --use_fast_math -Xptxas=-v -DTORCH_API_INCLUDE_EXTENSION_H -DTORCH_EXTENSION_NAME=t4_kernels -std=c++17
+ptxas info    : 0 bytes gmem
+ptxas info    : Compiling entry function '_Z26fused_w4a16_gemv_s4_kernelPK6__halfPKjS1_S1_PS_iii' for 'sm_75'
+ptxas info    : Function properties for _Z26fused_w4a16_gemv_s4_kernelPK6__halfPKjS1_S1_PS_iii
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 30 registers, used 1 barriers, 1024 bytes smem, 404 bytes cmem[0]
+ptxas info    : Compile time = 11.568 ms
+ptxas info    : Compiling entry function '_Z26fused_w4a16_gemv_u4_kernelPK6__halfPKjS1_S1_PS_iii' for 'sm_75'
+ptxas info    : Function properties for _Z26fused_w4a16_gemv_u4_kernelPK6__halfPKjS1_S1_PS_iii
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 30 registers, used 1 barriers, 1024 bytes smem, 404 bytes cmem[0]
+ptxas info    : Compile time = 10.562 ms
+/usr/local/cuda/bin/nvcc -I/usr/local/lib/python3.12/dist-packages/torch/include -I/usr/local/lib/python3.12/dist-packages/torch/include/torch/csrc/api/include -I/usr/local/cuda/include -I/usr/include/python3.12 -c /content/repo/research/src/kernels/lop3_dequant.cu -o build/temp.linux-x86_64-cpython-312/content/repo/research/src/kernels/lop3_dequant.o -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr --compiler-options '-fPIC' -O3 -gencode=arch=compute_75,code=sm_75 --use_fast_math -Xptxas=-v -DTORCH_API_INCLUDE_EXTENSION_H -DTORCH_EXTENSION_NAME=t4_kernels -std=c++17
+ptxas info    : 0 bytes gmem
+ptxas info    : Compiling entry function '_Z22lop3_dequant_s4_kernelPKjP6__halfPKS1_S4_i' for 'sm_75'
+ptxas info    : Function properties for _Z22lop3_dequant_s4_kernelPKjP6__halfPKS1_S4_i
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 16 registers, used 0 barriers, 388 bytes cmem[0]
+ptxas info    : Compile time = 4.344 ms
+ptxas info    : Compiling entry function '_Z22lop3_dequant_u4_kernelPKjP6__halfPKS1_S4_i' for 'sm_75'
+ptxas info    : Function properties for _Z22lop3_dequant_u4_kernelPKjP6__halfPKS1_S4_i
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 16 registers, used 0 barriers, 388 bytes cmem[0]
+ptxas info    : Compile time = 3.400 ms
+creating build/lib.linux-x86_64-cpython-312
+x86_64-linux-gnu-g++ -fno-strict-overflow -Wsign-compare -DNDEBUG -g -O2 -Wall -g -fstack-protector-strong -Wformat -Werror=format-security -g -fwrapv -O2 -shared -Wl,-O1 -Wl,-Bsymbolic-functions -Wl,-Bsymbolic-functions -g -fwrapv -O2 build/temp.linux-x86_64-cpython-312/content/repo/research/src/bindings.o build/temp.linux-x86_64-cpython-312/content/repo/research/src/kernels/fused_w4a16_gemm.o build/temp.linux-x86_64-cpython-312/content/repo/research/src/kernels/lop3_dequant.o -L/usr/local/lib/python3.12/dist-packages/torch/lib -L/usr/local/cuda/lib64 -L/usr/lib/x86_64-linux-gnu -lc10 -ltorch -ltorch_cpu -ltorch_python -lcudart -lc10_cuda -ltorch_cuda -o build/lib.linux-x86_64-cpython-312/t4_kernels.cpython-312-x86_64-linux-gnu.so
+copying build/lib.linux-x86_64-cpython-312/t4_kernels.cpython-312-x86_64-linux-gnu.so -> 
+
+  [OK] Extension built: t4_kernels.cpython-312-x86_64-linux-gnu.so
+
+==============================================================================
+  STAGE 3 — On-GPU Correctness & Known-Answer Tests
+==============================================================================
+
+--- H4 Unsigned INT4 KAT (vector 0xA7C13E59) ---
+   got : [1.75, 0.75, 3.0, 0.25, -0.25, 2.5, 1.25, 0.0]
+   want: [1.75, 0.75, 3.0, 0.25, -0.25, 2.5, 1.25, 2.0]
+   max_abs_diff = 2  -> FAIL
+
+--- H4 Signed INT4 KAT (vector 0xF817E29A) ---
+   got : [-3.0, -3.5, 1.0, -1.0, 3.5, 0.5, -4.0, 3.5]
+   want: [-3.0, -3.5, 1.0, -1.0, 3.5, 0.5, -4.0, -0.5]
+   max_abs_diff = 4  -> FAIL
+
+--- H4 Signed INT4 random-tensor allclose (4096 words) ---
+   max_abs_diff over 32768 values = 0.03125  -> FAIL
+
+--- H4 Unsigned INT4 random-tensor allclose (4096 words) ---
+   max_abs_diff over 32768 values = 0.0313721  -> FAIL
+
+--- Fused W4A16 GEMM correctness (M=1, K=1024, N=1024) ---
+   U4 max_abs_diff = 1.58789
+   S4 max_abs_diff = 1.56641
+   worst = 1.58789  (limit 2.0)  -> CONFIRM
+
+--- H7 INT3 LOP3 — bit-exact math identity (reference, NOT a CUDA kernel) ---
+   8-state identity sweep s3+4 == sign_invert(s3): CONFIRM
+
+--- H9 FP8 E4M3 -> FP16 +8 re-bias sweep (reference, NOT a CUDA kernel) ---
+   valid E4M3 states sweeped = 254 (expect 254), mismatches = 0 -> CONFIRM
+
+==============================================================================
+  STAGE 4 — Hardware Telemetry (power / clock / throttle)
+==============================================================================
+
+--- Stress loop: saturated fused dequant/GEMM for ~8 seconds ---
+   samples             : 242
+   clock_mhz_min       : 585.0
+   clock_mhz_max       : 1590.0
+   clock_mhz_mean      : 1222.190082644628
+   power_w_max         : 73.53
+   power_w_mean        : 67.4743388429752
+   temp_c_max          : 57.0
+   throttle_reasons    : ['0x0000000000000000', '0x0000000000000004']
+   stress_iters        : 11073
+
+==============================================================================
+  STAGE 5 — Nsight Compute Speed-of-Light Profiling
+==============================================================================
+
+--- ncu SOL metrics on lop3_dequant_s4 ---
+==PROF== Connected to process 2680 (/usr/bin/python3.12)
+==PROF== Profiling "distribution_elementwise_grid..." - 0: 0%....50%....100% - 3 passes
+==PROF== Profiling "distribution_elementwise_grid..." - 1: 0%....50%....100% - 3 passes
+==PROF== Profiling "vectorized_elementwise_kernel" - 2: 0%....50%....100% - 3 passes
+==PROF== Profiling "lop3_dequant_s4_kernel" - 3: 0%....50%....100% - 3 passes
+==PROF== Profiling "lop3_dequant_s4_kernel" - 4: 0%....50%....100% - 3 passes
+==PROF== Profiling "lop3_dequant_s4_kernel" - 5: 0%....50%....100% - 3 passes
+==PROF== Profiling "lop3_dequant_s4_kernel" - 6: 0%....50%....100% - 3 passes
+==PROF== Profiling "lop3_dequant_s4_kernel" - 7: 0%....50%....100% - 3 passes
+==PROF== Profiling "lop3_dequant_s4_kernel" - 8: 0%....50%....100% - 3 passes
+==PROF== Profiling "lop3_dequant_s4_kernel" - 9: 0%....50%....100% - 3 passes
+==PROF== Profiling "lop3_dequant_s4_kernel" - 10: 0%....50%....100% - 3 passes
+==PROF== Profiling "lop3_dequant_s4_kernel" - 11: 0%....50%....100% - 3 passes
+==PROF== Profiling "lop3_dequant_s4_kernel" - 12: 0%....50%....100% - 3 passes
+==PROF== Profiling "lop3_dequant_s4_kernel" - 13: 0%....50%....100% - 3 passes
+==PROF== Profiling "lop3_dequant_s4_kernel" - 14: 0%....50%....100% - 3 passes
+==PROF== Profiling "lop3_dequant_s4_kernel" - 15: 0%....50%....100% - 3 passes
+==PROF== Profiling "lop3_dequant_s4_kernel" - 16: 0%....50%....100% - 3 passes
+==PROF== Profiling "lop3_dequant_s4_kernel" - 17: 0%....50%....100% - 3 passes
+==PROF== Profiling "lop3_dequant_s4_kernel" - 18: 0%....50%....100% - 3 passes
+==PROF== Profiling "lop3_dequant_s4_kernel" - 19: 0%....50%....100% - 3 passes
+==PROF== Profiling "lop3_dequant_s4_kernel" - 20: 0%....50%....100% - 3 passes
+==PROF== Profiling "lop3_dequant_s4_kernel" - 21: 0%....50%....100% - 3 passes
+==PROF== Profiling "lop3_dequant_s4_kernel" - 22: 0%....50%....100% - 3 passes
+==PROF== Disconnected from process 2680
+==PROF== Report: /content/repo/research/results/2026-07-30_165546/ncu_report.ncu-rep
+
+"ID","Process ID","Process Name","Host Name","Kernel Name","Context","Stream","Block Size","Grid Size","Device","CC","Section Name","Metric Name","Metric Unit","Metric Value"
+"0","2680","python3.12","127.0.0.1","void at::<unnamed>::distribution_elementwise_grid_stride_kernel<unsigned long, 2, void templates::random_from_to_kernel<at::CUDAGeneratorImpl *>(at::TensorIteratorBase &, unsigned long, long, T1)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 3)]::operator ()() const::[lambda(curandStatePhilox4_32_10 *) (instance 1)], void at::<unnamed>::distribution_nullary_kernel<int, unsigned long, ulonglong2, at::CUDAGeneratorImpl *, void templates::random_from_to_kernel<at::CUDAGeneratorImpl *>(at::TensorIteratorBase &, unsigned long, long, T1)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 3)]::operator ()() const::[lambda(curandStatePhilox4_32_10 *) (instance 1)], void templates::random_from_to_kernel<at::CUDAGeneratorImpl *>(at::TensorIteratorBase &, unsigned long, long, T1)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 3)]::operator ()() const::[lambda(unsigned long) (instance 1)]>(at::TensorIteratorBase &, T4, const T5 &, T6)::[lambda(int, unsigned long) (instance 1)]>(long, at::PhiloxCudaState, T3, T4)","1","7","(256, 1, 1)","(160, 1, 1)","0","7.5","Command line profiler metrics","dram__throughput.of_peak_allocation_sol","","n/a"
+"0","2680","python3.12","127.0.0.1","void at::<unnamed>::distribution_elementwise_grid_stride_kernel<unsigned long, 2, void templates::random_from_to_kernel<at::CUDAGeneratorImpl *>(at::TensorIteratorBase &, unsigned long, long, T1)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 3)]::operator ()() const::[lambda(curandStatePhilox4_32_10 *) (instance 1)], void at::<unnamed>::distribution_nullary_kernel<int, unsigned long, ulonglong2, at::CUDAGeneratorImpl *, void templates::random_from_to_kernel<at::CUDAGeneratorImpl *>(at::TensorIteratorBase &, unsigned long, long, T1)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 3)]::operator ()() const::[lambda(curandStatePhilox4_32_10 *) (instance 1)], void templates::random_from_to_kernel<at::CUDAGeneratorImpl *>(at::TensorIteratorBase &, unsigned long, long, T1)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 3)]::operator ()() const::[lambda(unsigned long) (instance 1)]>(at::TensorIteratorBase &, T4, const T5 &, T6)::[lambda(int, unsigned long) (instance 1)]>(long, at::PhiloxCudaState, T3, T4)","1","7","(256, 1, 1)","(160, 1, 1)","0","7.5","Command line profiler metrics","l1tex__data_bank_conflicts_pipe_lsu.sum","","0"
+"0","2680","python3.12","127.0.0.1","void at::<unnamed>::distribution_elementwise_grid_stride_kernel<unsigned long, 2, void templates::random_from_to_kernel<at::CUDAGeneratorImpl *>(at::TensorIteratorBase &, unsigned long, long, T1)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 3)]::operator ()() const::[lambda(curandStatePhilox4_32_10 *) (instance 1)], void at::<unnamed>::distribution_nullary_kernel<int, unsigned long, ulonglong2, at::CUDAGeneratorImpl *, void templates::random_from_to_kernel<at::CUDAGeneratorImpl *>(at::TensorIteratorBase &, unsigned long, long, T1)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 3)]::operator ()() const::[lambda(curandStatePhilox4_32_10 *) (instance 1)], void templates::random_from_to_kernel<at::CUDAGeneratorImpl *>(at::TensorIteratorBase &, unsigned long, long, T1)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 3)]::operator ()() const::[lambda(unsigned long) (instance 1)]>(at::TensorIteratorBase &, T4, const T5 &, T6)::[lambda(int, unsigned long) (instance 1)]>(long, at::PhiloxCudaState, T3, T4)","1","7","(256, 1, 1)","(160, 1, 1)","0","7.5","Command line profiler metrics","sm__throughput.of_peak_allocation_sol","","n/a"
+"1","2680","python3.12","127.0.0.1","void at::<unnamed>::distribution_elementwise_grid_stride_kernel<float, 4, void templates::uniform_and_transform<c10::Half, float, at::CUDAGeneratorImpl *, void templates::uniform_kernel<at::CUDAGeneratorImpl *>(at::TensorIteratorBase &, double, double, T1)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 3)]::operator ()() const::[lambda(float) (instance 1)]>(at::TensorIteratorBase &, T3, T4)::[lambda(curandStatePhilox4_32_10 *) (instance 2)], void at::<unnamed>::distribution_nullary_kernel<c10::Half, float, float4, at::CUDAGeneratorImpl *, void templates::uniform_and_transform<c10::Half, float, at::CUDAGeneratorImpl *, void templates::uniform_kernel<at::CUDAGeneratorImpl *>(at::TensorIteratorBase &, double, double, T1)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 3)]::operator ()() const::[lambda(float) (instance 1)]>(at::TensorIteratorBase &, T3, T4)::[lambda(curandStatePhilox4_32_10 *) (instance 2)], void templates::uniform_kernel<at::CUDAGeneratorImpl *>(at::TensorIteratorBase &, double, double, T1)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 3)]::operator ()() const::[lambda(float) (instance 1)]>(at::TensorIteratorBase &, T4, const T5 &, T6)::[lambda(int, float) (instance 1)]>(long, at::PhiloxCudaState, T3, T4)","1","7","(256, 1, 1)","(160, 1, 1)","0","7.5","Command line profiler metrics","dram__throughput.of_peak_allocation_sol","","n/a"
+"1","2680","python3.12","127.0.0.1","void at::<unnamed>::distribution_elementwise_grid_stride_kernel<float, 4, void templates::uniform_and_transform<c10::Half, float, at::CUDAGeneratorImpl *, void templates::uniform_kernel<at::CUDAGeneratorImpl *>(at::TensorIteratorBase &, double, double, T1)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 3)]::operator ()() const::[lambda(float) (instance 1)]>(at::TensorIteratorBase &, T3, T4)::[lambda(curandStatePhilox4_32_10 *) (instance 2)], void at::<unnamed>::distribution_nullary_kernel<c10::Half, float, float4, at::CUDAGeneratorImpl *, void templates::uniform_and_transform<c10::Half, float, at::CUDAGeneratorImpl *, void templates::uniform_kernel<at::CUDAGeneratorImpl *>(at::TensorIteratorBase &, double, double, T1)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 3)]::operator ()() const::[lambda(float) (instance 1)]>(at::TensorIteratorBase &, T3, T4)::[lambda(curandStatePhilox4_32_10 *) (instance 2)], void templates::uniform_kernel<at::CUDAGeneratorImpl *>(at::TensorIteratorBase &, double, double, T1)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 3)]::operator ()() const::[lambda(float) (instance 1)]>(at::TensorIteratorBase &, T4, const T5 &, T6)::[lambda(int, float) (instance 1)]>(long, at::PhiloxCudaState, T3, T4)","1","7","(256, 1, 1)","(160, 1, 1)","0","7.5","Command line profiler metrics","l1tex__data_bank_conflicts_pipe_lsu.sum","","0"
+"1","2680","python3.12","127.0.0.1","void at::<unnamed>::distribution_elementwise_grid_stride_kernel<float, 4, void templates::uniform_and_transform<c10::Half, float, at::CUDAGeneratorImpl *, void templates::uniform_kernel<at::CUDAGeneratorImpl *>(at::TensorIteratorBase &, double, double, T1)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 3)]::operator ()() const::[lambda(float) (instance 1)]>(at::TensorIteratorBase &, T3, T4)::[lambda(curandStatePhilox4_32_10 *) (instance 2)], void at::<unnamed>::distribution_nullary_kernel<c10::Half, float, float4, at::CUDAGeneratorImpl *, void templates::uniform_and_transform<c10::Half, float, at::CUDAGeneratorImpl *, void templates::uniform_kernel<at::CUDAGeneratorImpl *>(at::TensorIteratorBase &, double, double, T1)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 3)]::operator ()() const::[lambda(float) (instance 1)]>(at::TensorIteratorBase &, T3, T4)::[lambda(curandStatePhilox4_32_10 *) (instance 2)], void templates::uniform_kernel<at::CUDAGeneratorImpl *>(at::TensorIteratorBase &, double, double, T1)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 3)]::operator ()() const::[lambda(float) (instance 1)]>(at::TensorIteratorBase &, T4, const T5 &, T6)::[lambda(int, float) (instance 1)]>(long, at::PhiloxCudaState, T3, T4)","1","7","(256, 1, 1)","(160, 1, 1)","0","7.5","Command line profiler metrics","sm__throughput.of_peak_allocation_sol","","n/a"
+"2","2680","python3.12","127.0.0.1","void at::vectorized_elementwise_kernel<4, at::FillFunctor<c10::Half>, std::array<char *, 1>>(int, T2, T3)","1","7","(128, 1, 1)","(2048, 1, 1)","0","7.5","Command line profiler metrics","dram__throughput.of_peak_allocation_sol","","n/a"
+"2","2680","python3.12","127.0.0.1","void at::vectorized_elementwise_kernel<4, at::FillFunctor<c10::Half>, std::array<char *, 1>>(int, T2, T3)","1","7","(128, 1, 1)","(2048, 1, 1)","0","7.5","Command line profiler metrics","l1tex__data_bank_conflicts_pipe_lsu.sum","","0"
+"2","2680","python3.12","127.0.0.1","void at::vectorized_elementwise_kernel<4, at::FillFunctor<c10::Half>, std::array<char *, 1>>(int, T2, T3)","1","7","(128, 1, 1)","(2048, 1, 1)","0","7.5","Command line profiler metrics","sm__throughput.of_peak_allocation_sol","","n/a"
+"3","2680","python3.12","127.0.0.1","lop3_dequant_s4_kernel(const unsigned int *, __half *, const __half *, const __half *, int)","1","7","(256, 1, 1)","(8192, 1, 1)","0","7.5","Command line profiler metrics","dram__throughput.of_peak_allocation_sol","","n/a"
+"3","2680","python3.12","127.0.0.1","lop3_dequant_s4_kernel(const unsigned int *, __half *, const __half *, const __half *, int)","1","7","(256, 1, 1)","(8192, 1, 1)","0","7.5","Command line profiler metrics","l1tex__data_bank_conflicts_pipe_lsu.sum","","1,898,201"
+"3","2680","python3.12","127.0.0.1","lop3_dequant_s4_kernel(const unsigned int *, __half *, const __half *, const __half *, int)","1","7","(256, 1, 1)","(8192, 1, 1)","0","7.5","Command line profiler metrics","sm__throughput.of_peak_allocation_sol","","n/a"
+"4","2680","python3.12","127.0.0.1","lop3_dequant_s4_kernel(const unsigned int *, __half *, const __half *, const __half *, int)","1","7","(256, 1, 1)","(8192, 1, 1)","0","7.5","Command line profiler metrics","dram__throughput.of_peak_allocation_sol","","n/a"
+"4","2680","python3.12","127.0.0.1","lop3_dequant_s4_kernel(const unsigned int *, __half *, const __half *, const __half *, int)","1","7","(256, 1, 1)","(8192, 1, 1)","0","7.5","Command line profiler metrics","l1tex__data_bank_conflicts_pipe_lsu.sum","","1,898,651"
+"4","2680","python3.12","127.0.0.1","lop3_dequant_s4_kernel(const unsigned int *, __half *, const __half *, const __half *, int)","1","7","(256, 1, 1)","(8192, 1, 1)","0","7.5","Command line profiler metrics","sm__throughput.of_peak_allocation_sol","","n/a"
+"5","2680","python3.12","127.0.0.1","lop3_dequant_s4_kernel(const unsigned int *, __half *, const __half *, const __half *, int)","1","7","(256, 1, 1)","(8192, 1, 1)","0","7.5","Command line profiler metrics","dram__throughput.of_peak_allocation_sol","","n/a"
+"5","2680","python3.12","127.0.0.1","lop3_dequant_s4_kernel(const unsigned int *, __half *, const __half *, const __half *, int)","1","7","(256, 1, 1)","(8192, 1, 1)","0","7.5","Command line profiler metrics","l1tex__data_bank_conflicts_pipe_lsu.sum","","1,897,181"
+"5","2680","python3.12","127.0.0.1","lop3_dequant_s4_kernel(const unsigned int *, __half *, const __half *, const __half *, int)","1","7","(256, 1, 1)","(8192, 1, 1)","0","7.5","Command line profiler metrics","sm__throughput.of_peak_allocation_sol","","n/a"
+"6","2680","python3.12","127.0.0.1","lop3_dequant_s4_kernel(const unsigned int *, __half *, const __half *, const __half *, int)","1","7","(256, 1, 1)","(8192, 1, 1)","0","7.5","Command line profiler metrics","dram__throughput.of_peak_allocation_sol","","n/a"
+"6","2680","python3.12","127.0.0.1","lop3_dequant_s4_kernel(const unsigned int *, __half *, const __half *, const __half *, int)","1","7","(256, 1, 1)","(8192, 1, 1)","0","7.5","Command line profiler metrics","l1tex__data_bank_conflicts_pipe_lsu.sum","","1,900,787"
+"6","2680","python3.12","127.0.0.1","lop3_dequant_s4_kernel(const unsigned int *, __half *, const __half *, const __half *, int)","1","7","(256, 1, 1)","(8192, 1, 1)","0","7.5","Command line profiler metrics","sm__throughput.of_peak_allocation_sol","","n/a"
+"7","2680","python3.12","127.0.0.1","lop3_dequant_s4_kernel(const unsigned int *, __half *, const __half *, const __half *, int)","1","7","(256, 1, 1)","(8192, 1, 1)","0","7.5","Command line profiler metrics","dram__throughput.of_peak_allocation_sol","","n/a"
+"7","2680","python3.12","127.0.0.1","lop3_dequant_s4_kernel(const unsigned int *, __half *, const __half *, const __half *, int)","1","7","(256, 1, 1)","(8192, 1, 1)","0","7.5","Command line profiler metrics","l1tex__data_bank_conflicts_pipe_lsu.sum","","1,898,312"
+"7","2680","python3.12","127.0.0.1","lop3_dequant_s4_kernel(const unsigned int *, __half *, const __half *, const __half *, int)","1","7","(256, 1, 1)","(8192, 1, 1)","0","7.5","Command line profiler metrics","sm__throughput.of_peak_allocation_sol","","n/a"
+"8","2680","python3.12","127.0.0.1","lop3_dequant_s4_kernel(const unsigned int *, __half *, const __half *, const __half *, int)","1","7","(256, 1, 1)","(8192, 1, 1)","0","7.5","Command line profiler metrics","dram__throughput.of_peak_allocation_sol","","n/a"
+"8","2680","python3.12","127.0.0.1","lop3_dequant_s4_kernel(const unsigned int *, __half *, const __half *, const __half *, int)","1","7","(256, 1, 1)","(8192, 1, 1)","0","7.5","Command line profiler metrics","l1tex__data_bank_conflicts_pipe_lsu.sum","","1,897,181"
+"8","2680","python3.12","127.0.0.1","lop3_dequant_s4_kernel(const unsigned int *, __half *, const __half *, const __half *, int)","1","7","(256, 1, 1)","(8192, 1, 1)","0","7.5","Command line profiler metrics","sm__throughput.of_peak_allocation_sol","","n/a"
+"9","2680","python3.12","127.0.0.1","lop3_dequant_s4_kernel(const unsigned int *, __half *, const __half *, const __half *, int)","1","7","(256, 1, 1)","(8192, 1, 1)","0","7.5","Command line profiler metrics","dram__throughput.of_peak_allocation_sol","","n/a"
+"9","2680","python3.12","127.0.0.1","lop3_dequant_s4_kernel(const unsigned int *, __half *, const __half *, const __half *, int)","1","7","(256, 1, 1)","(8192, 1, 1)","0","7.5","Command line profiler metrics","l1tex__data_bank_conflicts_pipe_lsu.sum","","1,898,828"
+
+==============================================================================
+  STAGE 6 — Verdict Synthesis (measured vs predicted)
+==============================================================================
+
+  H4_signed_int4_lop3: Signed INT4 Two's Complement LOP3 Unpacking (LUT 0x6A)
+     capability=kernel_ready  verdict = FAIL
+       - sass_algo_reduction                predicted=       2.5 measured=         -  [NOT_MEASURED]
+       - kat_bit_exact                      predicted=       0.0 measured=         4  [FAIL]
+       - random_allclose                    predicted=       0.0 measured=   0.03125  [FAIL]
+       - registers_per_thread               predicted=        64 measured=        30  [CONFIRM]
+       - stack_spills_bytes                 predicted=         0 measured=         0  [CONFIRM]
+
+  H4_companion_unsigned_int4_lop3: Unsigned INT4 Magic-Exponent LOP3 (LUT 0xEA, magic 0x64006400)
+     capability=kernel_ready  verdict = FAIL
+       - sass_algo_reduction                predicted=       2.5 measured=         -  [NOT_MEASURED]
+       - kat_bit_exact                      predicted=       0.0 measured=         2  [FAIL]
+       - random_allclose                    predicted=       0.0 measured=  0.031372  [FAIL]
+       - registers_per_thread               predicted=        64 measured=        30  [CONFIRM]
+       - stack_spills_bytes                 predicted=         0 measured=         0  [CONFIRM]
+
+  fused_w4a16_gemm: Fused W4A16 GEMM (LOP3 dequant inside register dot-product)
+     capability=kernel_ready  verdict = CONFIRM
+       - max_abs_diff                       predicted=       2.0 measured=    1.5879  [CONFIRM]
+       - correctness_u4                     predicted=      True measured=         1  [CONFIRM]
+       - correctness_s4                     predicted=      True measured=         1  [CONFIRM]
+
+  H7_signed_int3_lop3: Signed Sub-Byte INT3 LOP3 Dequantization (LUT 0xCA, magic 0x64046404)
+     capability=sim_only      verdict = NOT_MEASURABLE (sim_only)
+       - sass_algo_reduction                predicted=       2.8 measured=         -  [NOT_MEASURED]
+       - alternative_reduction_v_sim        predicted=      3.08 measured=         -  [NOT_MEASURED]
+       - smem_bank_conflicts                predicted=       0.0 measured=         -  [NOT_MEASURED]
+       - vram_compression                   predicted=      5.33 measured=         -  [NOT_MEASURED]
+       - arithmetic_intensity_prefill       predicted=    341.33 measured=         -  [NOT_MEASURED]
+       - roofline_speedup_prefill           predicted=      3.17 measured=         -  [NOT_MEASURED]
+       - roofline_speedup_decode            predicted=      4.46 measured=         -  [NOT_MEASURED]
+       - kat_bit_exact_int3                 predicted=       0.0 measured=         0  [CONFIRM]
+
+  H9_fp8_lop3_rescale: Fused FP8 E4M3 Emulation on FP16 Tensor Cores (LUT 0xEA, +8 exponent re-bias)
+     capability=sim_only      verdict = NOT_MEASURABLE (sim_only)
+       - sass_algo_reduction                predicted=      11.0 measured=         -  [NOT_MEASURED]
+       - fp8_sweep_valid_states             predicted=       254 measured=       254  [CONFIRM]
+       - emulated_tflops                    predicted=      60.1 measured=         -  [NOT_MEASURED]
+
+==============================================================================
+  GLOBAL VERDICT (kernel_ready hypotheses): FAIL
+==============================================================================
+   FAILING: ['H4_signed_int4_lop3', 'H4_companion_unsigned_int4_lop3']
+   NOT_MEASURABLE (sim_only): ['H7_signed_int3_lop3', 'H9_fp8_lop3_rescale']

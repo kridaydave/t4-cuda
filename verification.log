@@ -1,196 +1,164 @@
-/content/repo
-remote: Enumerating objects: 23, done.
-remote: Counting objects: 100% (23/23), done.
-remote: Compressing objects: 100% (2/2), done.
-remote: Total 12 (delta 9), reused 12 (delta 9), pack-reused 0 (from 0)
-Unpacking objects: 100% (12/12), 1.36 KiB | 278.00 KiB/s, done.
-From https://github.com/kridaydave/t4-cuda
- * branch            main       -> FETCH_HEAD
-   3d101f4..cb2ed27  main       -> origin/main
-Updating 3d101f4..cb2ed27
-Fast-forward
- harness/verify_dequant.py                     |  2 +-
- literature/t4_dequantization_research.md      | 18 ++++++++---------
- literature/verified_novelty_dequantization.md | 10 +++++-----
- src/kernels/lop3_dequant.h                    | 28 ++++++++++++++-------------
- src/t4_cuda_kernels.cu                        |  8 ++++----
- src/t4_ptx_assembly_suite.cu                  | 10 ++++++++--
- 6 files changed, 42 insertions(+), 34 deletions(-)
-==========================================================================
-  Tesla T4 CUDA Research & Kernel Suite: Complete Verification Pipeline
-==========================================================================
 
---> [1/5] Running Bit-Exact IEEE-754 Math Proofs & KAT Harness...
-===========================================================================
-  T4 CUDA Optimization: Unsigned & Signed INT4 LOP3 KAT Verification
-===========================================================================
+==============================================================================
+  Tesla T4 EMPIRICAL VALIDATION RUN
+==============================================================================
+  results dir : /content/research/results/2026-07-30_181644
+  started     : 2026-07-30T18:16:44.802526
 
---- [MATH PROOF] Unsigned LOP3 IEEE-754 FP16 (0x6400 | u4) ---
-  u4= 0 (0x0) | Bits: 0x6400 | Decoded: 1024.0 | Expected: 1024.0 | Match: True
-  u4= 1 (0x1) | Bits: 0x6401 | Decoded: 1025.0 | Expected: 1025.0 | Match: True
-  u4= 2 (0x2) | Bits: 0x6402 | Decoded: 1026.0 | Expected: 1026.0 | Match: True
-  u4= 3 (0x3) | Bits: 0x6403 | Decoded: 1027.0 | Expected: 1027.0 | Match: True
-  u4= 4 (0x4) | Bits: 0x6404 | Decoded: 1028.0 | Expected: 1028.0 | Match: True
-  u4= 5 (0x5) | Bits: 0x6405 | Decoded: 1029.0 | Expected: 1029.0 | Match: True
-  u4= 6 (0x6) | Bits: 0x6406 | Decoded: 1030.0 | Expected: 1030.0 | Match: True
-  u4= 7 (0x7) | Bits: 0x6407 | Decoded: 1031.0 | Expected: 1031.0 | Match: True
-  u4= 8 (0x8) | Bits: 0x6408 | Decoded: 1032.0 | Expected: 1032.0 | Match: True
-  u4= 9 (0x9) | Bits: 0x6409 | Decoded: 1033.0 | Expected: 1033.0 | Match: True
-  u4=10 (0xA) | Bits: 0x640A | Decoded: 1034.0 | Expected: 1034.0 | Match: True
-  u4=11 (0xB) | Bits: 0x640B | Decoded: 1035.0 | Expected: 1035.0 | Match: True
-  u4=12 (0xC) | Bits: 0x640C | Decoded: 1036.0 | Expected: 1036.0 | Match: True
-  u4=13 (0xD) | Bits: 0x640D | Decoded: 1037.0 | Expected: 1037.0 | Match: True
-  u4=14 (0xE) | Bits: 0x640E | Decoded: 1038.0 | Expected: 1038.0 | Match: True
-  u4=15 (0xF) | Bits: 0x640F | Decoded: 1039.0 | Expected: 1039.0 | Match: True
->> [MATH VERIFIED] Unsigned LOP3 exponent insertion is 100% exact.
+==============================================================================
+  STAGE 0 — Environment & Provenance Stamp
+==============================================================================
+  timestamp_utc             : 2026-07-30T18:16:44.826290+00:00
+  hostname                  : 61d92e750b3f
+  platform                  : Linux-6.6.122+-x86_64-with-glibc2.35
+  python                    : 3.12.13
+  git_sha                   : unknown
+  git_branch                : unknown
+  git_dirty                 : True
+  nvcc_path                 : /usr/local/cuda/bin/nvcc
+  nvcc_version              : ['Cuda compilation tools, release 12.8, V12.8.93']
+  nvidia_smi_path           : /opt/bin/nvidia-smi
+  gpu                       : Tesla T4, 580.82.07, 15360 MiB, 70.00 W, 7.5
+  torch_version             : 2.11.0+cu128
+  torch_cuda_available      : True
+  torch_cuda_version        : 12.8
+  torch_device_name         : Tesla T4
+  torch_compute_capability  : 7.5
 
---- [MATH PROOF] Signed INT4 LOP3 LUT 0x78 (Bit 3 Inversion) ---
-  Raw 0x0 -> s4= 0 | Bit3 Flipped: 0x8 | Bits: 0x6408 | FP16: 1032.0 | (FP16 - 1032.0):   0.0 | Match: True
-  Raw 0x1 -> s4= 1 | Bit3 Flipped: 0x9 | Bits: 0x6409 | FP16: 1033.0 | (FP16 - 1032.0):   1.0 | Match: True
-  Raw 0x2 -> s4= 2 | Bit3 Flipped: 0xA | Bits: 0x640A | FP16: 1034.0 | (FP16 - 1032.0):   2.0 | Match: True
-  Raw 0x3 -> s4= 3 | Bit3 Flipped: 0xB | Bits: 0x640B | FP16: 1035.0 | (FP16 - 1032.0):   3.0 | Match: True
-  Raw 0x4 -> s4= 4 | Bit3 Flipped: 0xC | Bits: 0x640C | FP16: 1036.0 | (FP16 - 1032.0):   4.0 | Match: True
-  Raw 0x5 -> s4= 5 | Bit3 Flipped: 0xD | Bits: 0x640D | FP16: 1037.0 | (FP16 - 1032.0):   5.0 | Match: True
-  Raw 0x6 -> s4= 6 | Bit3 Flipped: 0xE | Bits: 0x640E | FP16: 1038.0 | (FP16 - 1032.0):   6.0 | Match: True
-  Raw 0x7 -> s4= 7 | Bit3 Flipped: 0xF | Bits: 0x640F | FP16: 1039.0 | (FP16 - 1032.0):   7.0 | Match: True
-  Raw 0x8 -> s4=-8 | Bit3 Flipped: 0x0 | Bits: 0x6400 | FP16: 1024.0 | (FP16 - 1032.0):  -8.0 | Match: True
-  Raw 0x9 -> s4=-7 | Bit3 Flipped: 0x1 | Bits: 0x6401 | FP16: 1025.0 | (FP16 - 1032.0):  -7.0 | Match: True
-  Raw 0xA -> s4=-6 | Bit3 Flipped: 0x2 | Bits: 0x6402 | FP16: 1026.0 | (FP16 - 1032.0):  -6.0 | Match: True
-  Raw 0xB -> s4=-5 | Bit3 Flipped: 0x3 | Bits: 0x6403 | FP16: 1027.0 | (FP16 - 1032.0):  -5.0 | Match: True
-  Raw 0xC -> s4=-4 | Bit3 Flipped: 0x4 | Bits: 0x6404 | FP16: 1028.0 | (FP16 - 1032.0):  -4.0 | Match: True
-  Raw 0xD -> s4=-3 | Bit3 Flipped: 0x5 | Bits: 0x6405 | FP16: 1029.0 | (FP16 - 1032.0):  -3.0 | Match: True
-  Raw 0xE -> s4=-2 | Bit3 Flipped: 0x6 | Bits: 0x6406 | FP16: 1030.0 | (FP16 - 1032.0):  -2.0 | Match: True
-  Raw 0xF -> s4=-1 | Bit3 Flipped: 0x7 | Bits: 0x6407 | FP16: 1031.0 | (FP16 - 1032.0):  -1.0 | Match: True
->> [MATH VERIFIED] Signed LOP3 LUT 0x78 math is 100% exact for s4 in [-8..7].
+==============================================================================
+  STAGE 1 — Static Compile Audit (nvcc -Xptxas -v)
+==============================================================================
 
---- [KAT] Asymmetrical Non-Monotonic Known Answer Tests ---
-
-Unsigned KAT: W = 0xA7C13E59 | Scale = 0.25 | Zero = 2.0
-  Positional Nibbles (w0..w7): [9, 5, 14, 3, 1, 12, 7, 10]
-  Dequantized Output FP16:     [1.75, 0.75, 3.0, 0.25, -0.25, 2.5, 1.25, 2.0]
-  Expected Output FP16:        [1.75, 0.75, 3.0, 0.25, -0.25, 2.5, 1.25, 2.0]
-  >> [PASSED] Unsigned Asymmetrical KAT Match!
-
-Signed KAT (LUT 0x78): W = 0xF817E29A | Scale = 0.5 | Zero = 0.0
-  Positional Signed s4 (w0..w7): [-6, -7, 2, -2, 7, 1, -8, -1]
-  Dequantized Output FP16:       [-3.0, -3.5, 1.0, -1.0, 3.5, 0.5, -4.0, -0.5]
-  Expected Output FP16:          [-3.0, -3.5, 1.0, -1.0, 3.5, 0.5, -4.0, -0.5]
-  >> [PASSED] Signed Asymmetrical KAT Match!
-
-[SUMMARY] All Unsigned (0xEA) & Signed (0x6A) LOP3 Math Proofs and KATs Passed!
-
---> [2/5] Running Microarchitectural Roofline Simulation...
-================================================================================
-  TESLA T4 (TURING CC 7.5) EXTREME ROOFLINE & KERNEL OPTIMIZATION REPORT
-================================================================================
-Hardware Target       : NVIDIA Tesla T4 (Turing (TU104, CC 7.5))
-Streaming Multiprocess: 40 SMs (2560 CUDA Cores, 320 Tensor Cores)
-Memory Subsystem      : 16 GB GDDR6 @ 320.0 GB/s Peak Bandwidth
-Power Limit           : 70W TDP Cap
---------------------------------------------------------------------------------
-ROOFLINE ARITHMETIC INTENSITY KNEES (FLOPs or OPs per Byte):
-  - FP32 CUDA Cores   : 25.31 FLOPs/byte
-  - FP16 Tensor Cores : 203.12 FLOPs/byte (Threshold for Memory vs Compute Bound)
-  - INT8 Tensor Cores : 406.25 OPs/byte
---------------------------------------------------------------------------------
-
-BENCHMARK WORKLOAD SCENARIOS ON T4:
-
-Workload: LLM Single Token Decoding (BS=1, SeqLen=1)
-  - Intensity         : 1.00 FLOPs/byte (Break-even: 203.12)
-  - Bottleneck        : MEMORY_BANDWIDTH_BOUND
-  - Attainable Perf   : 0.32 TFLOPS
-  - Est. Minimum Time : 0.1049 ms
-
-Workload: LLM Small Batch Decoding  (BS=8, SeqLen=1)
-  - Intensity         : 1.00 FLOPs/byte (Break-even: 203.12)
-  - Bottleneck        : MEMORY_BANDWIDTH_BOUND
-  - Attainable Perf   : 0.32 TFLOPS
-  - Est. Minimum Time : 0.8393 ms
-
-Workload: LLM Medium Batch Prefill  (BS=1, SeqLen=512)
-  - Intensity         : 409.60 FLOPs/byte (Break-even: 203.12)
-  - Bottleneck        : COMPUTE_POWER_BOUND (70W TDP)
-  - Attainable Perf   : 65.00 TFLOPS
-  - Est. Minimum Time : 0.2643 ms
-
-Workload: Large Training GEMM       (BS=32, SeqLen=512)
-  - Intensity         : 409.60 FLOPs/byte (Break-even: 203.12)
-  - Bottleneck        : COMPUTE_POWER_BOUND (70W TDP)
-  - Attainable Perf   : 65.00 TFLOPS
-  - Est. Minimum Time : 8.4578 ms
-
-================================================================================
-KEY TESLA-T4 CUSTOMIZATION TAKEAWAYS:
-1. Small Batch Inference (BS 1-8) is 100% MEMORY BANDWIDTH BOUND (~320 GB/s limit).
-   -> Vectorized 128-bit loads (float4/uint4) & 4-bit quantization (W4A16) yield up to 4x latency reduction!
-2. Large Batch / Training is COMPUTE & POWER BOUND (70W limit).
-   -> Double-buffered register prefetching & tuning grid occupancy (avoiding 100% SM over-subscription)
-      prevents GPU boost clock thermal throttling from 1590MHz down to 1000MHz.
-================================================================================
-
---> [3/5] Compiling & Running Standalone CUDA Micro-benchmarks (sm_75)...
-===================================================
-Tesla T4 (Turing CC 7.5) Hardware Micro-Benchmarks
-===================================================
-
---- [1] Shared Memory Bank Conflict Benchmark ---
-Stride  1 ( 0-way conflict): 21161.0 total cycles (~21.16 cycles/access)
-Stride  2 ( 2-way conflict): 21231.0 total cycles (~21.23 cycles/access)
-Stride  4 ( 4-way conflict): 21147.0 total cycles (~21.15 cycles/access)
-Stride 32 (32-way conflict): 64327.0 total cycles (~64.33 cycles/access)
-
---- [2] Pointer-Chasing Memory Latency Benchmark ---
-L1 Data Cache Latency : 44.6 cycles / load
-GDDR6 DRAM Latency    : 425.8 cycles / load
-
---- [3] HMMA.884 Clock Throttling Profiling ---
-Profiling 100% Occupancy (1024 threads/SM)...
-  -> 100% Occupancy Duration: 449773074 cycles
-Profiling 25% Occupancy (256 threads/SM)...
-  -> 25% Occupancy Duration : 420000646 cycles
-
-===================================================
-[BENCHMARK COMPLETE] Empirical Measurements Collected.
-===================================================
-
---> [4/5] Building & Installing PyTorch CUDA Extension (t4_kernels)...
-running build_ext
-W0725 05:31:24.972000 8710 torch/utils/cpp_extension.py:680] Attempted to use ninja as the BuildExtension backend but we could not find ninja.. Falling back to using the slow distutils backend.
-building 't4_kernels' extension
-creating build/temp.linux-x86_64-cpython-312/content/repo/src
-creating build/temp.linux-x86_64-cpython-312/content/repo/src/kernels
-x86_64-linux-gnu-g++ -fno-strict-overflow -Wsign-compare -DNDEBUG -g -O2 -Wall -g -fstack-protector-strong -Wformat -Werror=format-security -g -fwrapv -O2 -fPIC -I/usr/local/lib/python3.12/dist-packages/torch/include -I/usr/local/lib/python3.12/dist-packages/torch/include/torch/csrc/api/include -I/usr/local/cuda/include -I/usr/include/python3.12 -c /content/repo/src/bindings.cpp -o build/temp.linux-x86_64-cpython-312/content/repo/src/bindings.o -O3 -DTORCH_API_INCLUDE_EXTENSION_H -DTORCH_EXTENSION_NAME=t4_kernels -std=c++17
-/usr/local/cuda/bin/nvcc -I/usr/local/lib/python3.12/dist-packages/torch/include -I/usr/local/lib/python3.12/dist-packages/torch/include/torch/csrc/api/include -I/usr/local/cuda/include -I/usr/include/python3.12 -c /content/repo/src/kernels/lop3_dequant.cu -o build/temp.linux-x86_64-cpython-312/content/repo/src/kernels/lop3_dequant.o -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr --compiler-options '-fPIC' -O3 -gencode=arch=compute_75,code=sm_75 --use_fast_math -Xptxas=-v -DTORCH_API_INCLUDE_EXTENSION_H -DTORCH_EXTENSION_NAME=t4_kernels -std=c++17
+--- Compiling lop3_dequant.cu (sm_75, -Xptxas -v) ---
 ptxas info    : 0 bytes gmem
 ptxas info    : Compiling entry function '_Z22lop3_dequant_s4_kernelPKjP6__halfPKS1_S4_i' for 'sm_75'
 ptxas info    : Function properties for _Z22lop3_dequant_s4_kernelPKjP6__halfPKS1_S4_i
     0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
 ptxas info    : Used 16 registers, used 0 barriers, 388 bytes cmem[0]
-ptxas info    : Compile time = 3.116 ms
+ptxas info    : Compile time = 3.070 ms
 ptxas info    : Compiling entry function '_Z22lop3_dequant_u4_kernelPKjP6__halfPKS1_S4_i' for 'sm_75'
 ptxas info    : Function properties for _Z22lop3_dequant_u4_kernelPKjP6__halfPKS1_S4_i
     0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
 ptxas info    : Used 16 registers, used 0 barriers, 388 bytes cmem[0]
-ptxas info    : Compile time = 2.489 ms
-creating build/lib.linux-x86_64-cpython-312
-x86_64-linux-gnu-g++ -fno-strict-overflow -Wsign-compare -DNDEBUG -g -O2 -Wall -g -fstack-protector-strong -Wformat -Werror=format-security -g -fwrapv -O2 -shared -Wl,-O1 -Wl,-Bsymbolic-functions -Wl,-Bsymbolic-functions -g -fwrapv -O2 build/temp.linux-x86_64-cpython-312/content/repo/src/bindings.o build/temp.linux-x86_64-cpython-312/content/repo/src/kernels/lop3_dequant.o -L/usr/local/lib/python3.12/dist-packages/torch/lib -L/usr/local/cuda/lib64 -L/usr/lib/x86_64-linux-gnu -lc10 -ltorch -ltorch_cpu -ltorch_python -lcudart -lc10_cuda -ltorch_cuda -o build/lib.linux-x86_64-cpython-312/t4_kernels.cpython-312-x86_64-linux-gnu.so
+ptxas info    : Compile time = 2.304 ms
+
+
+--- Compiling fused_w4a16_gemm.cu (sm_75, -Xptxas -v) ---
+ptxas info    : 0 bytes gmem
+ptxas info    : Compiling entry function '_Z26fused_w4a16_gemv_s4_kernelPK6__halfPKjS1_S1_PS_iii' for 'sm_75'
+ptxas info    : Function properties for _Z26fused_w4a16_gemv_s4_kernelPK6__halfPKjS1_S1_PS_iii
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 30 registers, used 1 barriers, 1024 bytes smem, 404 bytes cmem[0]
+ptxas info    : Compile time = 11.071 ms
+ptxas info    : Compiling entry function '_Z26fused_w4a16_gemv_u4_kernelPK6__halfPKjS1_S1_PS_iii' for 'sm_75'
+ptxas info    : Function properties for _Z26fused_w4a16_gemv_u4_kernelPK6__halfPKjS1_S1_PS_iii
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 30 registers, used 1 barriers, 1024 bytes smem, 404 bytes cmem[0]
+ptxas info    : Compile time = 10.216 ms
+
+
+  [H4_signed_int4_lop3] worst registers/thread = 30 (limit 64) -> CONFIRM
+  [H4_signed_int4_lop3] worst spill bytes      = 0 (limit 0) -> CONFIRM
+
+  [H4_companion_unsigned_int4_lop3] worst registers/thread = 30 (limit 64) -> CONFIRM
+  [H4_companion_unsigned_int4_lop3] worst spill bytes      = 0 (limit 0) -> CONFIRM
+
+==============================================================================
+  STAGE 2 — Build PyTorch CUDA Extension (t4_kernels)
+==============================================================================
+
+--- python3 setup.py build_ext --inplace ---
+running build_ext
+W0730 18:16:49.622000 3640 torch/utils/cpp_extension.py:680] Attempted to use ninja as the BuildExtension backend but we could not find ninja.. Falling back to using the slow distutils backend.
 copying build/lib.linux-x86_64-cpython-312/t4_kernels.cpython-312-x86_64-linux-gnu.so -> 
 
---> [5/5] Running On-GPU Differential Verification & Stress Test...
-[PyTorch GPU Check] Device Name: Tesla T4
-Kernel Output (u4):    tensor([ 1.7500,  0.7500,  3.0000,  0.2500, -0.2500,  2.5000,  1.2500,  2.0000],
-       device='cuda:0', dtype=torch.float16)
-Reference Output (u4): tensor([ 1.7500,  0.7500,  3.0000,  0.2500, -0.2500,  2.5000,  1.2500,  2.0000],
-       device='cuda:0', dtype=torch.float16)
-Kernel Output (s4):    tensor([-3.0000, -3.5000,  1.0000, -1.0000,  3.5000,  0.5000, -4.0000, -0.5000],
-       device='cuda:0', dtype=torch.float16)
-Reference Output (s4): tensor([-3.0000, -3.5000,  1.0000, -1.0000,  3.5000,  0.5000, -4.0000, -0.5000],
-       device='cuda:0', dtype=torch.float16)
->> [GPU SUCCESS] On-GPU Unsigned & Signed KAT Matches Verified!
->> [GPU STRESS TEST] Completed 4096x4096 dequantization without crashes. Shape: torch.Size([16777216])
+  [OK] Extension built: t4_kernels.cpython-312-x86_64-linux-gnu.so
 
-==========================================================================
-  [ALL VERIFICATIONS PASSED SUCCESSFULLY]
-==========================================================================
+==============================================================================
+  STAGE 3 — On-GPU Correctness & Known-Answer Tests
+==============================================================================
+
+--- H4 Unsigned INT4 KAT (vector 0xA7C13E59) ---
+   got : [1.75, 0.75, 3.0, 0.25, -0.25, 2.5, 1.25, 2.0]
+   want: [1.75, 0.75, 3.0, 0.25, -0.25, 2.5, 1.25, 2.0]
+   max_abs_diff = 0  -> CONFIRM
+
+--- H4 Signed INT4 KAT (vector 0xF817E29A) ---
+   got : [-3.0, -3.5, 1.0, -1.0, 3.5, 0.5, -4.0, -0.5]
+   want: [-3.0, -3.5, 1.0, -1.0, 3.5, 0.5, -4.0, -0.5]
+   max_abs_diff = 0  -> CONFIRM
+
+--- H4 Signed INT4 random-tensor allclose (4096 words) ---
+   max_abs_diff over 32768 values = 0.0313721  -> FAIL
+
+--- H4 Unsigned INT4 random-tensor allclose (4096 words) ---
+   max_abs_diff over 32768 values = 0.0313721  -> FAIL
+
+--- Fused W4A16 GEMM correctness (M=1, K=1024, N=1024) ---
+   U4 max_abs_diff = 1.58594
+   S4 max_abs_diff = 1.58594
+   worst = 1.58594  (limit 2.0)  -> CONFIRM
+
+--- H7 INT3 LOP3 — bit-exact math identity (reference, NOT a CUDA kernel) ---
+   8-state identity sweep s3+4 == sign_invert(s3): CONFIRM
+
+--- H9 FP8 E4M3 -> FP16 +8 re-bias sweep (reference, NOT a CUDA kernel) ---
+   valid E4M3 states sweeped = 254 (expect 254), mismatches = 0 -> CONFIRM
+
+==============================================================================
+  STAGE 6 — Verdict Synthesis (measured vs predicted)
+==============================================================================
+
+  H4_signed_int4_lop3: Signed INT4 Two's Complement LOP3 Unpacking (LUT 0x6A)
+     capability=kernel_ready  verdict = FAIL
+       - sass_algo_reduction                predicted=       2.5 measured=         -  [NOT_MEASURED]
+       - kat_bit_exact                      predicted=       0.0 measured=         0  [CONFIRM]
+       - random_allclose                    predicted=       0.0 measured=  0.031372  [FAIL]
+       - registers_per_thread               predicted=        64 measured=        30  [CONFIRM]
+       - stack_spills_bytes                 predicted=         0 measured=         0  [CONFIRM]
+
+  H4_companion_unsigned_int4_lop3: Unsigned INT4 Magic-Exponent LOP3 (LUT 0xEA, magic 0x64006400)
+     capability=kernel_ready  verdict = FAIL
+       - sass_algo_reduction                predicted=       2.5 measured=         -  [NOT_MEASURED]
+       - kat_bit_exact                      predicted=       0.0 measured=         0  [CONFIRM]
+       - random_allclose                    predicted=       0.0 measured=  0.031372  [FAIL]
+       - registers_per_thread               predicted=        64 measured=        30  [CONFIRM]
+       - stack_spills_bytes                 predicted=         0 measured=         0  [CONFIRM]
+
+  fused_w4a16_gemm: Fused W4A16 GEMM (LOP3 dequant inside register dot-product)
+     capability=kernel_ready  verdict = CONFIRM
+       - max_abs_diff                       predicted=       2.0 measured=    1.5859  [CONFIRM]
+       - correctness_u4                     predicted=      True measured=         1  [CONFIRM]
+       - correctness_s4                     predicted=      True measured=         1  [CONFIRM]
+
+  H7_signed_int3_lop3: Signed Sub-Byte INT3 LOP3 Dequantization (LUT 0xCA, magic 0x64046404)
+     capability=sim_only      verdict = NOT_MEASURABLE (sim_only)
+       - sass_algo_reduction                predicted=       2.8 measured=         -  [NOT_MEASURED]
+       - alternative_reduction_v_sim        predicted=      3.08 measured=         -  [NOT_MEASURED]
+       - smem_bank_conflicts                predicted=       0.0 measured=         -  [NOT_MEASURED]
+       - vram_compression                   predicted=      5.33 measured=         -  [NOT_MEASURED]
+       - arithmetic_intensity_prefill       predicted=    341.33 measured=         -  [NOT_MEASURED]
+       - roofline_speedup_prefill           predicted=      3.17 measured=         -  [NOT_MEASURED]
+       - roofline_speedup_decode            predicted=      4.46 measured=         -  [NOT_MEASURED]
+       - kat_bit_exact_int3                 predicted=       0.0 measured=         0  [CONFIRM]
+
+  H9_fp8_lop3_rescale: Fused FP8 E4M3 Emulation on FP16 Tensor Cores (LUT 0xEA, +8 exponent re-bias)
+     capability=sim_only      verdict = NOT_MEASURABLE (sim_only)
+       - sass_algo_reduction                predicted=      11.0 measured=         -  [NOT_MEASURED]
+       - fp8_sweep_valid_states             predicted=       254 measured=       254  [CONFIRM]
+       - emulated_tflops                    predicted=      60.1 measured=         -  [NOT_MEASURED]
+
+==============================================================================
+  GLOBAL VERDICT (kernel_ready hypotheses): FAIL
+==============================================================================
+   FAILING: ['H4_signed_int4_lop3', 'H4_companion_unsigned_int4_lop3']
+   NOT_MEASURABLE (sim_only): ['H7_signed_int3_lop3', 'H9_fp8_lop3_rescale']
+
+==============================================================================
+  RUN COMPLETE — FAIL
+==============================================================================
+  results dir : /content/research/results/2026-07-30_181644
+  verdict     : /content/research/results/2026-07-30_181644/VERDICT.md
+  summary     : /content/research/results/2026-07-30_181644/summary.json
+  tarball     : /content/research/results/2026-07-30_181644.tar.gz
 

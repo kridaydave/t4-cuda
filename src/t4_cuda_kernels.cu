@@ -151,7 +151,13 @@ __global__ void t4_turing_wmma_double_buffer_gemm(
     int col = blockIdx.x * TILE_N + (warp_id % 2) * 16;
 
     if (row < M && col < N) {
-        wmma::store_matrix_sync(&C[row * N + col], c_frag, N, wmma::mem_row_major);
+        float temp_c[16][16];
+        wmma::store_matrix_sync(&temp_c[0][0], c_frag, 16, wmma::mem_row_major);
+        for (int r = 0; r < 16 && (row + r) < M; ++r) {
+            for (int c = 0; c < 16 && (col + c) < N; ++c) {
+                C[(row + r) * N + (col + c)] = __float2half(temp_c[r][c]);
+            }
+        }
     }
 }
 
@@ -354,6 +360,11 @@ __device__ __forceinline__ half2 fast_silu2_fused(half2 x) {
         : "r"(reinterpret_cast<const uint32_t&>(x))
     );
     return out;
+}
+
+// Swizzled Shared Memory Indexing for T4 SMEM tiles (stride 40 halfs)
+__device__ __forceinline__ uint32_t swizzle_smem_offset_t4(int row, int col) {
+    return row * 40 + col;
 }
 
 // Global persistent tile counter located in L2 cache for Persistent Grid Block Streaming

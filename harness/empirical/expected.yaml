@@ -1,0 +1,210 @@
+# =============================================================================
+# Expected Values Manifest — T4 CUDA Empirical Validation (H4 / H7 / H9 family)
+#
+# Every entry here is a QUANTITATIVE claim extracted from findings.md,
+# research-state.yaml, experiments/*/protocol.md, and experiments/*/analysis.md.
+# run_empirical.py measures each, applies `criterion` with `tolerance`, and
+# marks the hypothesis CONFIRM / MARGIN / FAIL accordingly.
+#
+# Statuses:
+#   kernel_ready   -> real CUDA kernel exists in src/, can be measured on GPU
+#   math_verified  -> bit-exact numerics proven; runs as Python reference check
+#   sim_only       -> NO CUDA kernel exists yet; can only report "not measurable"
+# =============================================================================
+
+schema_version: "1.0"
+generated_for: "research-state.yaml v9.0.0"
+
+hypotheses:
+
+  # ---------------------------------------------------------------------------
+  H4_signed_int4_lop3:
+    title: "Signed INT4 Two's Complement LOP3 Unpacking (LUT 0x6A)"
+    source: "experiments/findings.md §1; research-state.yaml H4"
+    capabilities:
+      kernel: kernel_ready          # dequantize_s4
+      numerics: math_verified
+    metrics:
+      sass_algo_reduction:
+        description: "Naive BFE dequant inst count / LOP3 dequant inst count (algorithmic)"
+        predicted: 2.50
+        unit: "x"
+        criterion: gte
+        tolerance: 0.0
+      kat_bit_exact:
+        description: "Known-Answer-Test vector 0xF817E29A vs reference (max abs diff)"
+        predicted: 0.0
+        unit: "abs_diff"
+        criterion: lte
+        tolerance: 1.0e-3
+      random_allclose:
+        description: "4096-random-word GPU dequant vs CPU reference (max abs diff)"
+        predicted: 0.0
+        unit: "abs_diff"
+        criterion: lte
+        tolerance: 1.0e-3
+      registers_per_thread:
+        description: "ptxas -v register usage for lop3_dequant kernels"
+        predicted_max: 64
+        unit: "regs"
+        criterion: lte
+        tolerance: 0
+      stack_spills_bytes:
+        description: "ptxas spill stores+loads (must be zero)"
+        predicted_max: 0
+        unit: "bytes"
+        criterion: lte
+        tolerance: 0
+
+  # ---------------------------------------------------------------------------
+  H4_companion_unsigned_int4_lop3:
+    title: "Unsigned INT4 Magic-Exponent LOP3 (LUT 0xEA, magic 0x64006400)"
+    source: "findings.md §1; verification.log"
+    capabilities:
+      kernel: kernel_ready          # dequantize_u4
+      numerics: math_verified
+    metrics:
+      sass_algo_reduction:
+        description: "Naive 20 insts / LOP3 8 insts"
+        predicted: 2.50
+        unit: "x"
+        criterion: gte
+        tolerance: 0.0
+      kat_bit_exact:
+        description: "KAT vector 0xA7C13E59 vs reference (max abs diff)"
+        predicted: 0.0
+        unit: "abs_diff"
+        criterion: lte
+        tolerance: 1.0e-3
+      random_allclose:
+        description: "4096-random-word GPU dequant vs CPU reference (max abs diff)"
+        predicted: 0.0
+        unit: "abs_diff"
+        criterion: lte
+        tolerance: 1.0e-3
+      registers_per_thread:
+        description: "ptxas -v register usage"
+        predicted_max: 64
+        unit: "regs"
+        criterion: lte
+        tolerance: 0
+      stack_spills_bytes:
+        description: "ptxas spill stores+loads (must be zero)"
+        predicted_max: 0
+        unit: "bytes"
+        criterion: lte
+        tolerance: 0
+
+  # ---------------------------------------------------------------------------
+  fused_w4a16_gemm:
+    title: "Fused W4A16 GEMM (LOP3 dequant inside register dot-product)"
+    source: "src/kernels/fused_w4a16_gemm.cu; harness/verify_fused_gemm.py"
+    capabilities:
+      kernel: kernel_ready          # fused_w4a16_gemm_u4 / _s4
+      numerics: math_verified
+    metrics:
+      max_abs_diff:
+        description: "GEMM output vs PyTorch matmul reference (M=1,K=1024,N=1024)"
+        predicted_max: 2.0
+        unit: "abs_diff"
+        criterion: lte
+        tolerance: 0
+      correctness_u4:
+        description: "Unsigned path matches reference within tolerance"
+        predicted: true
+        criterion: bool
+      correctness_s4:
+        description: "Signed path matches reference within tolerance"
+        predicted: true
+        criterion: bool
+
+  # ---------------------------------------------------------------------------
+  H7_signed_int3_lop3:
+    title: "Signed Sub-Byte INT3 LOP3 Dequantization (LUT 0xCA, magic 0x64046404)"
+    source: "experiments/h7-int3-lop3-dequant/protocol.md + analysis.md"
+    capabilities:
+      kernel: sim_only              # NO CUDA kernel exists — Python reference only
+      numerics: math_verified
+    metrics:
+      sass_algo_reduction:
+        description: "14.0 insts (BFE) / 5.0 insts (LOP3) per 32-bit word"
+        predicted: 2.80
+        unit: "x"
+        criterion: gte
+        tolerance: 0.0
+      alternative_reduction_v_sim:
+        description: "Alternate SASS model in findings.md: 40 -> 13 insts"
+        predicted: 3.08
+        unit: "x"
+        criterion: informational
+      smem_bank_conflicts:
+        description: "XOR-swizzle SMEM access conflicts"
+        predicted: 0.0
+        unit: "conflicts"
+        criterion: lte
+        tolerance: 0
+      vram_compression:
+        description: "FP16 14.0 GB / INT3 3.15 GB for 7B model"
+        predicted: 5.33
+        unit: "x"
+        criterion: gte
+        tolerance: 0.0
+      arithmetic_intensity_prefill:
+        description: "FLOP/byte at M=64, K=N=4096"
+        predicted: 341.33
+        unit: "flop_per_byte"
+        criterion: gte
+        tolerance: 0.0
+      roofline_speedup_prefill:
+        description: "T4 prefill throughput speedup vs FP16"
+        predicted: 3.17
+        unit: "x"
+        criterion: informational
+      roofline_speedup_decode:
+        description: "T4 decode (M=1) speedup vs FP16"
+        predicted: 4.46
+        unit: "x"
+        criterion: informational
+      kat_bit_exact_int3:
+        description: "INT3 math identity s3+4 == sign_bit_invert(s3), 8-state sweep"
+        predicted: 0.0
+        unit: "abs_diff"
+        criterion: lte
+        tolerance: 0.0
+
+  # ---------------------------------------------------------------------------
+  H9_fp8_lop3_rescale:
+    title: "Fused FP8 E4M3 Emulation on FP16 Tensor Cores (LUT 0xEA, +8 exponent re-bias)"
+    source: "experiments/h9-fp8-emulated-lop3-rescaling/; findings.md §2.C"
+    capabilities:
+      kernel: sim_only              # NO CUDA kernel exists — Python reference only
+      numerics: math_verified
+    metrics:
+      sass_algo_reduction:
+        description: "PyTorch cast 22 insts / LOP3 2 insts per FP8 pair"
+        predicted: 11.0
+        unit: "x"
+        criterion: gte
+        tolerance: 0.0
+      fp8_sweep_valid_states:
+        description: "E4M3 -> FP16 re-bias exactness across 254 valid byte states"
+        predicted: 254
+        unit: "states"
+        criterion: eq
+        tolerance: 0
+      emulated_tflops:
+        description: "FP8 GEMM on FP16 tensor cores"
+        predicted: 60.1
+        unit: "TFLOPS"
+        criterion: informational
+
+# =============================================================================
+# GLOBAL PASS RULE
+# =============================================================================
+global_pass_rule:
+  description: >
+    Overall suite CONFIRMS only if every 'kernel_ready' hypothesis passes ALL its
+    gating criteria. 'sim_only' hypotheses are reported as NOT_MEASURABLE (they
+    inform the paper's known-limitations section, they do not block the run).
+  blocking_capabilities: ["kernel_ready"]
+  non_blocking_capabilities: ["sim_only", "math_verified"]

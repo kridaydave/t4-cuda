@@ -7,6 +7,8 @@
 
 An extreme, microarchitecturally-optimized CUDA C++ and PTX assembly kernel suite custom-tailored for **NVIDIA Tesla T4 GPUs** (Turing CC 7.5, TU104 die, 40 SMs, 320 Tensor Cores, 70W TDP).
 
+> **Research state**: v9.0.0 (2026-07-29). Hypothesis register H1–H33 with novelty re-audit. See [research/findings.md](file:///home/kriday/Desktop/epoch-1/research/findings.md) §7 and [research/literature/survey_2026_07_29_novelty_reaudit_and_new_gaps.md](file:///home/kriday/Desktop/epoch-1/research/literature/survey_2026_07_29_novelty_reaudit_and_new_gaps.md).
+
 ---
 
 ## Executive Summary & Architectural Motivation

@@ -1,0 +1,238 @@
+{
+  "run": {
+    "dir": "2026-07-30_165546",
+    "timestamp_utc": "2026-07-30T16:57:21.374694+00:00"
+  },
+  "env": {
+    "timestamp_utc": "2026-07-30T16:55:46.575437+00:00",
+    "hostname": "bd6a2dff8fa8",
+    "platform": "Linux-6.6.122+-x86_64-with-glibc2.35",
+    "python": "3.12.13",
+    "git_sha": "unknown",
+    "git_branch": "unknown",
+    "git_dirty": true,
+    "nvcc_path": "/usr/local/cuda/bin/nvcc",
+    "nvcc_version": [
+      "Cuda compilation tools, release 12.8, V12.8.93"
+    ],
+    "nvidia_smi_path": "/opt/bin/nvidia-smi",
+    "gpu": "Tesla T4, 580.82.07, 15360 MiB, 70.00 W, 7.5",
+    "torch_version": "2.11.0+cu128",
+    "torch_cuda_available": true,
+    "torch_cuda_version": "12.8",
+    "torch_device_name": "Tesla T4",
+    "torch_compute_capability": "7.5"
+  },
+  "global_verdict": "FAIL",
+  "stages": [
+    {
+      "name": "S0_env",
+      "status": "PASS",
+      "duration_s": 1.65,
+      "notes": []
+    },
+    {
+      "name": "S1_compile_audit",
+      "status": "PASS",
+      "duration_s": 3.88,
+      "notes": []
+    },
+    {
+      "name": "S2_build_ext",
+      "status": "PASS",
+      "duration_s": 44.28,
+      "notes": [
+        "built .so files: ['t4_kernels.cpython-312-x86_64-linux-gnu.so']"
+      ]
+    },
+    {
+      "name": "S3_gpu_correctness",
+      "status": "FAIL",
+      "duration_s": 16.74,
+      "notes": [
+        "H7 INT3: validated math identity ONLY \u2014 kernel is sim_only (not measurable).",
+        "H9 FP8: validated reference sweep ONLY \u2014 kernel is sim_only (not measurable)."
+      ]
+    },
+    {
+      "name": "S4_telemetry",
+      "status": "PASS",
+      "duration_s": 8.35,
+      "notes": []
+    },
+    {
+      "name": "S5_ncu",
+      "status": "PASS",
+      "duration_s": 19.89,
+      "notes": []
+    },
+    {
+      "name": "S6_verdict",
+      "status": "FAIL",
+      "duration_s": 0.0,
+      "notes": []
+    }
+  ],
+  "metrics": {
+    "H4_signed_int4_lop3.registers_per_thread": {
+      "status": "CONFIRM",
+      "measured": 30,
+      "predicted_max": 64,
+      "detail": "30 <= 64"
+    },
+    "H4_signed_int4_lop3.stack_spills_bytes": {
+      "status": "CONFIRM",
+      "measured": 0,
+      "predicted_max": 0,
+      "detail": "0 <= 0"
+    },
+    "H4_companion_unsigned_int4_lop3.registers_per_thread": {
+      "status": "CONFIRM",
+      "measured": 30,
+      "predicted_max": 64,
+      "detail": "30 <= 64"
+    },
+    "H4_companion_unsigned_int4_lop3.stack_spills_bytes": {
+      "status": "CONFIRM",
+      "measured": 0,
+      "predicted_max": 0,
+      "detail": "0 <= 0"
+    },
+    "H4_companion_unsigned_int4_lop3.kat_bit_exact": {
+      "status": "FAIL",
+      "measured": 2.0,
+      "predicted": 0.0,
+      "tolerance": 0.001,
+      "detail": "2 > 0"
+    },
+    "H4_signed_int4_lop3.kat_bit_exact": {
+      "status": "FAIL",
+      "measured": 4.0,
+      "predicted": 0.0,
+      "tolerance": 0.001,
+      "detail": "4 > 0"
+    },
+    "H4_signed_int4_lop3.random_allclose": {
+      "status": "FAIL",
+      "measured": 0.03125,
+      "predicted": 0.0,
+      "tolerance": 0.001,
+      "detail": "0.03125 > 0"
+    },
+    "H4_companion_unsigned_int4_lop3.random_allclose": {
+      "status": "FAIL",
+      "measured": 0.0313720703125,
+      "predicted": 0.0,
+      "tolerance": 0.001,
+      "detail": "0.03137 > 0"
+    },
+    "fused_w4a16_gemm.max_abs_diff": {
+      "status": "CONFIRM",
+      "measured": 1.587890625,
+      "predicted_max": 2.0,
+      "detail": "1.588 <= 2"
+    },
+    "fused_w4a16_gemm.correctness_u4": {
+      "status": "CONFIRM",
+      "measured": true,
+      "predicted": true,
+      "detail": "bool"
+    },
+    "fused_w4a16_gemm.correctness_s4": {
+      "status": "CONFIRM",
+      "measured": true,
+      "predicted": true,
+      "detail": "bool"
+    },
+    "H7_signed_int3_lop3.kat_bit_exact_int3": {
+      "status": "CONFIRM",
+      "measured": 0.0,
+      "predicted": 0.0,
+      "detail": "0 <= 0",
+      "note": "math identity only; no CUDA kernel exists for INT3 yet"
+    },
+    "H9_fp8_lop3_rescale.fp8_sweep_valid_states": {
+      "status": "CONFIRM",
+      "measured": 254,
+      "predicted": 254,
+      "detail": "0 mismatches",
+      "note": "reference math only; no CUDA kernel exists for FP8 yet"
+    },
+    "telemetry.power_within_tdp": {
+      "status": "FAIL",
+      "measured": 73.53,
+      "predicted_max": 70.0,
+      "detail": "H5 family: 70W cap adherence (informational for dequant stress)"
+    },
+    "telemetry.sm_clock_mean": {
+      "status": "INFO",
+      "measured": 1222.190082644628,
+      "predicted": 1590.0,
+      "detail": "Boost clock during dequant stress (not a power-capped GEMM regime)"
+    }
+  },
+  "hypotheses": {
+    "H4_signed_int4_lop3": {
+      "capability": "kernel_ready",
+      "blocking": true,
+      "verdict": "FAIL"
+    },
+    "H4_companion_unsigned_int4_lop3": {
+      "capability": "kernel_ready",
+      "blocking": true,
+      "verdict": "FAIL"
+    },
+    "fused_w4a16_gemm": {
+      "capability": "kernel_ready",
+      "blocking": true,
+      "verdict": "CONFIRM"
+    },
+    "H7_signed_int3_lop3": {
+      "capability": "sim_only",
+      "blocking": false,
+      "verdict": "NOT_MEASURABLE (sim_only)"
+    },
+    "H9_fp8_lop3_rescale": {
+      "capability": "sim_only",
+      "blocking": false,
+      "verdict": "NOT_MEASURABLE (sim_only)"
+    }
+  },
+  "telemetry": {
+    "samples": 242,
+    "clock_mhz_min": 585.0,
+    "clock_mhz_max": 1590.0,
+    "clock_mhz_mean": 1222.190082644628,
+    "power_w_max": 73.53,
+    "power_w_mean": 67.4743388429752,
+    "temp_c_max": 57.0,
+    "throttle_reasons": [
+      "0x0000000000000000",
+      "0x0000000000000004"
+    ],
+    "stress_iters": 11073
+  },
+  "correctness": {
+    "u4_kat": {
+      "max_abs_diff": 2.0,
+      "status": "FAIL"
+    },
+    "s4_kat": {
+      "max_abs_diff": 4.0,
+      "status": "FAIL"
+    },
+    "s4_random": {
+      "max_abs_diff": 0.03125,
+      "status": "FAIL"
+    },
+    "u4_random": {
+      "max_abs_diff": 0.0313720703125,
+      "status": "FAIL"
+    },
+    "fused_gemm": {
+      "max_abs_diff_u4": 1.587890625,
+      "max_abs_diff_s4": 1.56640625,
+      "status": "CONFIRM"
+    }
+  }
+}

@@ -53,12 +53,12 @@ __global__ void fused_w4a16_gemv_u4_kernel(
         uint32_t raw_04, raw_15, raw_26, raw_37;
         lop3_unpack_u4_ptx(packed_w, raw_04, raw_15, raw_26, raw_37, scale_32, neg_bias_32);
 
-        // 3. Load 8 FP16 activations corresponding to these K positions
-        const half2* A_h2 = reinterpret_cast<const half2*>(A_row + k_idx * 8);
-        half2 a_04 = A_h2[0]; // (a0, a4)
-        half2 a_15 = A_h2[1]; // (a1, a5)
-        half2 a_26 = A_h2[2]; // (a2, a6)
-        half2 a_37 = A_h2[3]; // (a3, a7)
+        // 3. Load 8 FP16 activations corresponding to these K positions (stride-4 paired with LOP3 unpack)
+        const half* A_ptr = A_row + k_idx * 8;
+        half2 a_04 = __halves2half2(A_ptr[0], A_ptr[4]);
+        half2 a_15 = __halves2half2(A_ptr[1], A_ptr[5]);
+        half2 a_26 = __halves2half2(A_ptr[2], A_ptr[6]);
+        half2 a_37 = __halves2half2(A_ptr[3], A_ptr[7]);
 
         // 4. Multiply-accumulate in FP16/FP32
         half2 prod04 = __hmul2(reinterpret_cast<const half2&>(raw_04), a_04);
@@ -145,11 +145,11 @@ __global__ void fused_w4a16_gemv_s4_kernel(
         uint32_t raw_04, raw_15, raw_26, raw_37;
         lop3_unpack_s4_ptx(packed_w, raw_04, raw_15, raw_26, raw_37, scale_32, neg_bias_1032_32);
 
-        const half2* A_h2 = reinterpret_cast<const half2*>(A_row + k_idx * 8);
-        half2 a_04 = A_h2[0];
-        half2 a_15 = A_h2[1];
-        half2 a_26 = A_h2[2];
-        half2 a_37 = A_h2[3];
+        const half* A_ptr = A_row + k_idx * 8;
+        half2 a_04 = __halves2half2(A_ptr[0], A_ptr[4]);
+        half2 a_15 = __halves2half2(A_ptr[1], A_ptr[5]);
+        half2 a_26 = __halves2half2(A_ptr[2], A_ptr[6]);
+        half2 a_37 = __halves2half2(A_ptr[3], A_ptr[7]);
 
         half2 prod04 = __hmul2(reinterpret_cast<const half2&>(raw_04), a_04);
         half2 prod15 = __hmul2(reinterpret_cast<const half2&>(raw_15), a_15);

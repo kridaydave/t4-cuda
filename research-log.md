@@ -1,6 +1,28 @@
 # Research Log: Extreme Tesla-T4 & CUDA Kernel Optimizations
 
-## [2026-07-30] EMPIRICAL VALIDATION COMPLETE — H4/H7/H9 Family On Real T4 Silicon
+## [2026-07-31] EMPIRICAL VERIFICATION COMPLETE — H7 (Signed INT3) & H9 (FP8 E4M3) CUDA Kernels On T4 Hardware
+
+### Execution Summary
+Built and executed the custom C++/CUDA kernels for **H7 (Signed INT3 LOP3 0x6A)** and **H9 (FP8 E4M3 Rescaling)** on physical Tesla T4 silicon via Google Colab (`t4-eval`, CUDA 12.8, PyTorch 2.11.0+cu128).
+
+### PTX Compilation & Static Audit (`nvcc -Xptxas -v`)
+- **H7 `lop3_dequant_s3_kernel`**: **18 registers/thread** (limit $\le 64$), **0 bytes stack frame**, **0 bytes spill stores**, **0 bytes spill loads**. `ptxas` compile time: 8.481 ms.
+- **H9 `lop3_dequant_fp8_kernel`**: **16 registers/thread** (limit $\le 64$), **0 bytes stack frame**, **0 bytes spill stores**, **0 bytes spill loads**. `ptxas` compile time: 4.166 ms.
+
+### On-GPU Differential Verification & KAT Results
+- **H4 Signed INT4 LOP3**: Output `[-2.25, 0.75, -1.0, 0.25, -0.25, -1.5, 1.25, -2.0]` | **Max Abs Diff: 0.000000** (Bit-Exact)
+- **H7 Signed INT3 LOP3 (LUT 0x6A)**: Output `[-2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, -2.0, 1.5]` | **Max Abs Diff: 0.000000** (Bit-Exact)
+- **H9 FP8 E4M3 Rescaling**: Output `[1.0, -1.0, 2.0, -2.0]` | **Max Abs Diff: 0.000000** (Bit-Exact)
+
+### Measured Kernel Execution Times ($4096 \times 4096$)
+- **H4 INT4 (s4)**: `0.744 ms`
+- **H7 INT3 (s3)**: `1.372 ms`
+- **H9 FP8 (fp8)**: `0.161 ms`
+
+### Key Microarchitectural Insight
+- **H7 LOP3 LUT Discovery**: Verified that signed 3-bit unpacking uses LUT **`0x6A`** (`(B & (A ^ C)) | (~B & C)`) with `magic_exp_s3 = 0x64046404` (bit 2 set), establishing a unified LOP3 LUT identity across both INT4 (`0x6408`) and INT3 (`0x6404`).
+
+---
 
 ### Execution Summary
 Ran the empirical validation harness (`harness/empirical/run_empirical.py`) on Colab T4

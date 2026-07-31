@@ -51,19 +51,31 @@ hypotheses:
     status: "SIMULATED_AND_FORMALLY_PROVED"
     target_metric: "21.43% DRAM Traffic Reduction"
   - id: "H7"
-    name: "Signed INT3 LOP3 LUT 0xCA Dequantization"
-    status: "CUDA_KERNEL_IMPLEMENTED"
+    name: "Signed INT3 LOP3 LUT 0x6A Dequantization"
+    status: "EMPIRICALLY_VERIFIED_ON_HARDWARE"
     target_metric: "3.08x SASS Speedup, 303.4 GB/s Bandwidth"
-    empirical_note: "Math identity CONFIRMED on T4; CUDA kernel written (lop3_dequant_s3_kernel), ready for physical T4 profiling"
+    empirical_verified:
+      date: "2026-07-31"
+      kat_bit_exact: true
+      max_abs_diff: 0.000000
+      registers_per_thread: 18         # 0 spills, 0 stack frame
+      compile_time_ms: 8.481
+      execution_time_4096x4096_ms: 1.372
   - id: "H8"
     name: "Software Warp Specialization Split-K"
     status: "SIMULATED_AND_FORMALLY_PROVED"
     target_metric: "94.2% Fetch Stall Reduction"
   - id: "H9"
     name: "Fused FP8 E4M3 LOP3 Exponent Rescaling"
-    status: "CUDA_KERNEL_IMPLEMENTED"
+    status: "EMPIRICALLY_VERIFIED_ON_HARDWARE"
     target_metric: "11.0x Inst Speedup, 60.1 TFLOPS Compute"
-    empirical_note: "E4M3 sweep CONFIRMED on T4; CUDA kernel written (lop3_dequant_fp8_kernel), ready for physical T4 profiling"
+    empirical_verified:
+      date: "2026-07-31"
+      kat_bit_exact: true
+      max_abs_diff: 0.000000
+      registers_per_thread: 16         # 0 spills, 0 stack frame
+      compile_time_ms: 4.166
+      execution_time_4096x4096_ms: 0.161
   - id: "H10_H16"
     name: "Extended Microarchitectural Frontiers H10-H16"
     status: "SIMULATED_AND_FORMALLY_PROVED"

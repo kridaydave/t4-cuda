@@ -29,7 +29,7 @@ T4_SPECS = {
 # ============================================================================
 def verify_finding_1_h7_int3_lop3():
     print("=" * 80)
-    print("  PROOF FOR FINDING 1 (H7): SIGNED INT3 LOP3 DEQUANTIZATION (LUT 0xCA)")
+    print("  PROOF FOR FINDING 1 (H7): SIGNED INT3 LOP3 DEQUANTIZATION (LUT 0x6A)")
     print("=" * 80)
 
     # 1. Exhaustive 3-Bit State Representation Sweep

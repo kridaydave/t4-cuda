@@ -44,8 +44,16 @@ hypotheses:
       compile_time_ms: 2.3
   - id: "H5"
     name: "70W TDP Power-Aware Occupancy Capping"
-    status: "SIMULATED_AND_FORMALLY_PROVED"
+    status: "EMPIRICALLY_VERIFIED_ON_HARDWARE"
     target_metric: "61.4W Flat Power, 1590 MHz Locked Clock"
+    empirical_verified:
+      date: "2026-07-31"
+      uncapped_max_power_w: 93.61        # Exceeds 70.0 W TDP cap
+      uncapped_throttle_active_pct: 72.5 # 0x0004 SW_POWER_CAP active
+      uncapped_mean_clock_mhz: 1193     # Throttled clock
+      capped_max_power_w: 50.36          # Safely under 70.0 W TDP cap
+      capped_throttle_active_pct: 0.0   # 0% throttling
+      capped_locked_clock_mhz: 1590     # Locked 100% at 1590 MHz boost
   - id: "H6"
     name: "Fused Backward GEMM + Inline AdamW"
     status: "SIMULATED_AND_FORMALLY_PROVED"

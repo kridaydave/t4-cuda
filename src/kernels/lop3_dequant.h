@@ -61,20 +61,20 @@ __device__ __forceinline__ void lop3_unpack_s3_ptx(
     const uint32_t magic_exp_s3 = 0x64046404; // 1024.0 FP16 with bit2 set (0x6404) for sign-inversion
 
     // Extract 5 pairs of 3-bit indices (lower half: elem k, upper half: elem k+5)
-    uint32_t W05 = (W & 0x0007) | ((W >> 15) << 16);
+    uint32_t W05 = (W & 0x0007) | (((W >> 15) & 0x0007) << 16);
     uint32_t W16 = ((W >> 3) & 0x0007) | (((W >> 18) & 0x0007) << 16);
     uint32_t W27 = ((W >> 6) & 0x0007) | (((W >> 21) & 0x0007) << 16);
     uint32_t W38 = ((W >> 9) & 0x0007) | (((W >> 24) & 0x0007) << 16);
     uint32_t W49 = ((W >> 12) & 0x0007) | (((W >> 27) & 0x0007) << 16);
 
-    // 1. Bitwise LOP3 LUT 0xCA: (B & (A ^ C)) | (~B & C)
+    // 1. Bitwise LOP3 LUT 0x6A: (B & (A ^ C)) | (~B & C)
     //    When B=1 (3-bit mask): output (A ^ C), inverting bit 2 since C's bit 2 is 1
     //    When B=0 (non-mask): pass C (FP16 exponent 0x6400)
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0xCA;" : "=r"(raw_05) : "r"(W05), "r"(mask_even_s3), "r"(magic_exp_s3));
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0xCA;" : "=r"(raw_16) : "r"(W16), "r"(mask_even_s3), "r"(magic_exp_s3));
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0xCA;" : "=r"(raw_27) : "r"(W27), "r"(mask_even_s3), "r"(magic_exp_s3));
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0xCA;" : "=r"(raw_38) : "r"(W38), "r"(mask_even_s3), "r"(magic_exp_s3));
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0xCA;" : "=r"(raw_49) : "r"(W49), "r"(mask_even_s3), "r"(magic_exp_s3));
+    asm volatile("lop3.b32 %0, %1, %2, %3, 0x6A;" : "=r"(raw_05) : "r"(W05), "r"(mask_even_s3), "r"(magic_exp_s3));
+    asm volatile("lop3.b32 %0, %1, %2, %3, 0x6A;" : "=r"(raw_16) : "r"(W16), "r"(mask_even_s3), "r"(magic_exp_s3));
+    asm volatile("lop3.b32 %0, %1, %2, %3, 0x6A;" : "=r"(raw_27) : "r"(W27), "r"(mask_even_s3), "r"(magic_exp_s3));
+    asm volatile("lop3.b32 %0, %1, %2, %3, 0x6A;" : "=r"(raw_38) : "r"(W38), "r"(mask_even_s3), "r"(magic_exp_s3));
+    asm volatile("lop3.b32 %0, %1, %2, %3, 0x6A;" : "=r"(raw_49) : "r"(W49), "r"(mask_even_s3), "r"(magic_exp_s3));
 
     // 2. Hardware SIMD FP16 FMA: (raw * scale) + neg_bias_1028
     asm volatile("fma.rn.f16x2 %0, %0, %1, %2;" : "+r"(raw_05) : "r"(scale_32), "r"(neg_bias_1028_32));
@@ -84,7 +84,7 @@ __device__ __forceinline__ void lop3_unpack_s3_ptx(
     asm volatile("fma.rn.f16x2 %0, %0, %1, %2;" : "+r"(raw_49) : "r"(scale_32), "r"(neg_bias_1028_32));
 }
 
-// Pure PTX FP8 E4M3 -> FP16 Dequantization (0xFE bitwise OR + fma.rn.f16x2)
+// Pure PTX FP8 E4M3 -> FP16 Dequantization (0xFE bitwise OR + exp_bias addition + fma.rn.f16x2)
 __device__ __forceinline__ void lop3_unpack_fp8_ptx(
     uint32_t W,
     uint32_t &raw_01, uint32_t &raw_23,
@@ -103,9 +103,13 @@ __device__ __forceinline__ void lop3_unpack_fp8_ptx(
     uint32_t W23_em   = ((W23 & 0x007F) << 7) | (((W23 >> 8) & 0x007F) << 23);
     uint32_t W23_sign = ((W23 & 0x0080) << 8) | (((W23 >> 8) & 0x0080) << 24);
 
-    // LOP3 LUT 0xFE: A | B | C  (combine sign, shifted mantissa/exponent, and exp_bias)
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0xFE;" : "=r"(raw_01) : "r"(W01_em), "r"(W01_sign), "r"(exp_bias));
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0xFE;" : "=r"(raw_23) : "r"(W23_em), "r"(W23_sign), "r"(exp_bias));
+    // Add exponent bias offset (+8) to mantissa/exponent word
+    uint32_t W01_biased = W01_em + exp_bias;
+    uint32_t W23_biased = W23_em + exp_bias;
+
+    // Combine sign and biased exponent/mantissa
+    raw_01 = W01_biased | W01_sign;
+    raw_23 = W23_biased | W23_sign;
 
     // Optional scale adjustment via FMA (raw * scale + 0.0)
     const uint32_t zero_32 = 0x00000000;

@@ -824,7 +824,7 @@ __global__ void t4_lop3_dequant_s3_kernel(
     const uint32_t mask_even_s3 = 0x00070007;
     const uint32_t magic_exp_s3 = 0x64046404; // 1024.0 FP16 with bit2 set (0x6404) for sign-inversion
 
-    uint32_t W05 = (W & 0x0007) | ((W >> 15) << 16);
+    uint32_t W05 = (W & 0x0007) | (((W >> 15) & 0x0007) << 16);
     uint32_t W16 = ((W >> 3) & 0x0007) | (((W >> 18) & 0x0007) << 16);
     uint32_t W27 = ((W >> 6) & 0x0007) | (((W >> 21) & 0x0007) << 16);
     uint32_t W38 = ((W >> 9) & 0x0007) | (((W >> 24) & 0x0007) << 16);
@@ -832,11 +832,11 @@ __global__ void t4_lop3_dequant_s3_kernel(
 
     uint32_t raw_05, raw_16, raw_27, raw_38, raw_49;
 
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0xCA;" : "=r"(raw_05) : "r"(W05), "r"(mask_even_s3), "r"(magic_exp_s3));
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0xCA;" : "=r"(raw_16) : "r"(W16), "r"(mask_even_s3), "r"(magic_exp_s3));
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0xCA;" : "=r"(raw_27) : "r"(W27), "r"(mask_even_s3), "r"(magic_exp_s3));
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0xCA;" : "=r"(raw_38) : "r"(W38), "r"(mask_even_s3), "r"(magic_exp_s3));
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0xCA;" : "=r"(raw_49) : "r"(W49), "r"(mask_even_s3), "r"(magic_exp_s3));
+    asm volatile("lop3.b32 %0, %1, %2, %3, 0x6A;" : "=r"(raw_05) : "r"(W05), "r"(mask_even_s3), "r"(magic_exp_s3));
+    asm volatile("lop3.b32 %0, %1, %2, %3, 0x6A;" : "=r"(raw_16) : "r"(W16), "r"(mask_even_s3), "r"(magic_exp_s3));
+    asm volatile("lop3.b32 %0, %1, %2, %3, 0x6A;" : "=r"(raw_27) : "r"(W27), "r"(mask_even_s3), "r"(magic_exp_s3));
+    asm volatile("lop3.b32 %0, %1, %2, %3, 0x6A;" : "=r"(raw_38) : "r"(W38), "r"(mask_even_s3), "r"(magic_exp_s3));
+    asm volatile("lop3.b32 %0, %1, %2, %3, 0x6A;" : "=r"(raw_49) : "r"(W49), "r"(mask_even_s3), "r"(magic_exp_s3));
 
     asm volatile("fma.rn.f16x2 %0, %0, %1, %2;" : "+r"(raw_05) : "r"(scale_32), "r"(neg_bias_32));
     asm volatile("fma.rn.f16x2 %0, %0, %1, %2;" : "+r"(raw_16) : "r"(scale_32), "r"(neg_bias_32));
@@ -887,10 +887,8 @@ __global__ void t4_lop3_dequant_fp8_kernel(
     uint32_t W23_em   = ((W23 & 0x007F) << 7) | (((W23 >> 8) & 0x007F) << 23);
     uint32_t W23_sign = ((W23 & 0x0080) << 8) | (((W23 >> 8) & 0x0080) << 24);
 
-    uint32_t raw_01, raw_23;
-
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0xFE;" : "=r"(raw_01) : "r"(W01_em), "r"(W01_sign), "r"(exp_bias));
-    asm volatile("lop3.b32 %0, %1, %2, %3, 0xFE;" : "=r"(raw_23) : "r"(W23_em), "r"(W23_sign), "r"(exp_bias));
+    uint32_t raw_01 = (W01_em + exp_bias) | W01_sign;
+    uint32_t raw_23 = (W23_em + exp_bias) | W23_sign;
 
     const uint32_t zero_32 = 0x00000000;
     asm volatile("fma.rn.f16x2 %0, %0, %1, %2;" : "+r"(raw_01) : "r"(scale_32), "r"(zero_32));

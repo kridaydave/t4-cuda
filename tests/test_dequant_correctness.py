@@ -19,26 +19,67 @@ def cpu_dequantize(packed_tensor, scales_tensor, zps_tensor, is_signed=False):
     """
     Pure CPU/NumPy reference implementation for 4-bit dequantization.
     """
-    # Move to CPU and use uint32 for accurate bitwise operations
     packed = packed_tensor.detach().cpu().numpy().astype(np.uint32)
     scales = scales_tensor.detach().cpu().numpy().astype(np.float32)
     zps = zps_tensor.detach().cpu().numpy().astype(np.float32)
-    
+
     if scales.size == 1:
         scales = np.broadcast_to(scales, packed.shape)
     if zps.size == 1:
         zps = np.broadcast_to(zps, packed.shape)
-        
-    # Unpack 8 nibbles (lowest 4 bits first)
+
     unpacked = np.zeros((*packed.shape, 8), dtype=np.float32)
     for i in range(8):
         nibble = (packed >> (i * 4)) & 0xF
         if is_signed:
-            # Sign extension for 4-bit (two's complement)
             nibble = np.where(nibble >= 8, nibble - 16, nibble)
-        
-        # Apply formula: value = (nibble_value - zero_point) * scale
         unpacked[..., i] = (nibble - zps) * scales
+
+    return torch.tensor(unpacked, dtype=torch.float16, device=packed_tensor.device)
+
+def cpu_dequantize_s3(packed_tensor, scales_tensor, zps_tensor):
+    """
+    Pure CPU/NumPy reference implementation for 3-bit signed (s3) dequantization.
+    Unpacks 10 3-bit signed values from each 32-bit integer word.
+    """
+    packed = packed_tensor.detach().cpu().numpy().astype(np.uint32)
+    scales = scales_tensor.detach().cpu().numpy().astype(np.float32)
+    zps = zps_tensor.detach().cpu().numpy().astype(np.float32)
+
+    if scales.size == 1:
+        scales = np.broadcast_to(scales, packed.shape)
+    if zps.size == 1:
+        zps = np.broadcast_to(zps, packed.shape)
+
+    unpacked = np.zeros((*packed.shape, 10), dtype=np.float32)
+    bit_shifts = [0, 3, 6, 9, 12, 15, 18, 21, 24, 27]
+    for i, shift in enumerate(bit_shifts):
+        val3 = (packed >> shift) & 0x7
+        s3_val = np.where(val3 >= 4, val3 - 8, val3)
+        unpacked[..., i] = (s3_val - zps) * scales
+
+    return torch.tensor(unpacked, dtype=torch.float16, device=packed_tensor.device)
+
+def cpu_dequantize_fp8(packed_tensor, scales_tensor):
+    """
+    Pure CPU/NumPy reference implementation for FP8 E4M3 dequantization.
+    Unpacks 4 FP8 E4M3 bytes from each 32-bit integer word.
+    """
+    packed = packed_tensor.detach().cpu().numpy().astype(np.uint32)
+    scales = scales_tensor.detach().cpu().numpy().astype(np.float32)
+
+    if scales.size == 1:
+        scales = np.broadcast_to(scales, packed.shape)
+
+    unpacked = np.zeros((*packed.shape, 4), dtype=np.float32)
+    for i in range(4):
+        byte_val = (packed >> (i * 8)) & 0xFF
+        sign = (byte_val >> 7) & 0x1
+        exp = (byte_val >> 3) & 0xF
+        mant = byte_val & 0x7
+
+        float_val = np.where(exp > 0, ((-1.0)**sign) * (2.0**(exp - 7)) * (1.0 + mant / 8.0), 0.0)
+        unpacked[..., i] = float_val * scales
 
     return torch.tensor(unpacked, dtype=torch.float16, device=packed_tensor.device)
 

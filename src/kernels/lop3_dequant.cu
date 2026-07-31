@@ -82,6 +82,71 @@ __global__ void lop3_dequant_s4_kernel(
     out_ptr[7] = (uint16_t)(raw_37 >> 16);
 }
 
+__global__ void lop3_dequant_s3_kernel(
+    const uint32_t* __restrict__ packed_weights,
+    half* __restrict__ output_fp16,
+    const half* __restrict__ scale,
+    const half* __restrict__ zero_point,
+    int num_uint32s)
+{
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= num_uint32s) return;
+
+    uint32_t W = packed_weights[idx];
+    half s = scale[idx];
+    half z = zero_point[idx];
+
+    float s_f = __half2float(s);
+    float z_f = __half2float(z);
+    float bias_f = (-1028.0f - z_f) * s_f;
+    half bias_h = __float2half(bias_f);
+
+    uint32_t scale_32 = pack_half_dup_u32(s);
+    uint32_t neg_bias_1028_32 = pack_half_dup_u32(bias_h);
+
+    uint32_t raw_05, raw_16, raw_27, raw_38, raw_49;
+    lop3_unpack_s3_ptx(W, raw_05, raw_16, raw_27, raw_38, raw_49, scale_32, neg_bias_1028_32);
+
+    int out_offset = idx * 10;
+    uint16_t* out_ptr = reinterpret_cast<uint16_t*>(output_fp16 + out_offset);
+
+    out_ptr[0] = (uint16_t)(raw_05 & 0xFFFF);
+    out_ptr[1] = (uint16_t)(raw_16 & 0xFFFF);
+    out_ptr[2] = (uint16_t)(raw_27 & 0xFFFF);
+    out_ptr[3] = (uint16_t)(raw_38 & 0xFFFF);
+    out_ptr[4] = (uint16_t)(raw_49 & 0xFFFF);
+    out_ptr[5] = (uint16_t)(raw_05 >> 16);
+    out_ptr[6] = (uint16_t)(raw_16 >> 16);
+    out_ptr[7] = (uint16_t)(raw_27 >> 16);
+    out_ptr[8] = (uint16_t)(raw_38 >> 16);
+    out_ptr[9] = (uint16_t)(raw_49 >> 16);
+}
+
+__global__ void lop3_dequant_fp8_kernel(
+    const uint32_t* __restrict__ packed_weights,
+    half* __restrict__ output_fp16,
+    const half* __restrict__ scale,
+    int num_uint32s)
+{
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= num_uint32s) return;
+
+    uint32_t W = packed_weights[idx];
+    half s = scale[idx];
+    uint32_t scale_32 = pack_half_dup_u32(s);
+
+    uint32_t raw_01, raw_23;
+    lop3_unpack_fp8_ptx(W, raw_01, raw_23, scale_32);
+
+    int out_offset = idx * 4;
+    uint16_t* out_ptr = reinterpret_cast<uint16_t*>(output_fp16 + out_offset);
+
+    out_ptr[0] = (uint16_t)(raw_01 & 0xFFFF);
+    out_ptr[1] = (uint16_t)(raw_01 >> 16);
+    out_ptr[2] = (uint16_t)(raw_23 & 0xFFFF);
+    out_ptr[3] = (uint16_t)(raw_23 >> 16);
+}
+
 void launch_lop3_dequant_u4(
     const uint32_t* d_packed, half* d_output, const half* d_scale, const half* d_zero, int num_uint32s, cudaStream_t stream)
 {
@@ -99,3 +164,22 @@ void launch_lop3_dequant_s4(
     lop3_dequant_s4_kernel<<<blocks, threads_per_block, 0, stream>>>(
         d_packed, d_output, d_scale, d_zero, num_uint32s);
 }
+
+void launch_lop3_dequant_s3(
+    const uint32_t* d_packed, half* d_output, const half* d_scale, const half* d_zero, int num_uint32s, cudaStream_t stream)
+{
+    int threads_per_block = 256;
+    int blocks = (num_uint32s + threads_per_block - 1) / threads_per_block;
+    lop3_dequant_s3_kernel<<<blocks, threads_per_block, 0, stream>>>(
+        d_packed, d_output, d_scale, d_zero, num_uint32s);
+}
+
+void launch_lop3_dequant_fp8(
+    const uint32_t* d_packed, half* d_output, const half* d_scale, int num_uint32s, cudaStream_t stream)
+{
+    int threads_per_block = 256;
+    int blocks = (num_uint32s + threads_per_block - 1) / threads_per_block;
+    lop3_dequant_fp8_kernel<<<blocks, threads_per_block, 0, stream>>>(
+        d_packed, d_output, d_scale, num_uint32s);
+}
+

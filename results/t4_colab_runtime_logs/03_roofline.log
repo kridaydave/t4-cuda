@@ -1,0 +1,53 @@
+=== TEST RUN: 03_roofline.log ===
+Command: python3 src/t4_roofline_and_kernel_benchmarks.py
+Exit Code: 0
+Duration: 0.055 seconds
+----------------------------------------------------------------------
+================================================================================
+  TESLA T4 (TURING CC 7.5) EXTREME ROOFLINE & KERNEL OPTIMIZATION REPORT
+================================================================================
+Hardware Target       : NVIDIA Tesla T4 (Turing (TU104, CC 7.5))
+Streaming Multiprocess: 40 SMs (2560 CUDA Cores, 320 Tensor Cores)
+Memory Subsystem      : 16 GB GDDR6 @ 320.0 GB/s Peak Bandwidth
+Power Limit           : 70W TDP Cap
+--------------------------------------------------------------------------------
+ROOFLINE ARITHMETIC INTENSITY KNEES (FLOPs or OPs per Byte):
+  - FP32 CUDA Cores   : 25.31 FLOPs/byte
+  - FP16 Tensor Cores : 203.12 FLOPs/byte (Threshold for Memory vs Compute Bound)
+  - INT8 Tensor Cores : 406.25 OPs/byte
+--------------------------------------------------------------------------------
+
+BENCHMARK WORKLOAD SCENARIOS ON T4:
+
+Workload: LLM Single Token Decoding (BS=1, SeqLen=1)
+  - Intensity         : 1.00 FLOPs/byte (Break-even: 203.12)
+  - Bottleneck        : MEMORY_BANDWIDTH_BOUND
+  - Attainable Perf   : 0.32 TFLOPS
+  - Est. Minimum Time : 0.1049 ms
+
+Workload: LLM Small Batch Decoding  (BS=8, SeqLen=1)
+  - Intensity         : 1.00 FLOPs/byte (Break-even: 203.12)
+  - Bottleneck        : MEMORY_BANDWIDTH_BOUND
+  - Attainable Perf   : 0.32 TFLOPS
+  - Est. Minimum Time : 0.8393 ms
+
+Workload: LLM Medium Batch Prefill  (BS=1, SeqLen=512)
+  - Intensity         : 409.60 FLOPs/byte (Break-even: 203.12)
+  - Bottleneck        : COMPUTE_POWER_BOUND (70W TDP)
+  - Attainable Perf   : 65.00 TFLOPS
+  - Est. Minimum Time : 0.2643 ms
+
+Workload: Large Training GEMM       (BS=32, SeqLen=512)
+  - Intensity         : 409.60 FLOPs/byte (Break-even: 203.12)
+  - Bottleneck        : COMPUTE_POWER_BOUND (70W TDP)
+  - Attainable Perf   : 65.00 TFLOPS
+  - Est. Minimum Time : 8.4578 ms
+
+================================================================================
+KEY TESLA-T4 CUSTOMIZATION TAKEAWAYS:
+1. Small Batch Inference (BS 1-8) is 100% MEMORY BANDWIDTH BOUND (~320 GB/s limit).
+   -> Vectorized 128-bit loads (float4/uint4) & 4-bit quantization (W4A16) yield up to 4x latency reduction!
+2. Large Batch / Training is COMPUTE & POWER BOUND (70W limit).
+   -> Double-buffered register prefetching & tuning grid occupancy (avoiding 100% SM over-subscription)
+      prevents GPU boost clock thermal throttling from 1590MHz down to 1000MHz.
+================================================================================

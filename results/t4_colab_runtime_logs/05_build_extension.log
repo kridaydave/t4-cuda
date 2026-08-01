@@ -1,0 +1,55 @@
+=== TEST RUN: 05_build_extension.log ===
+Command: cd src && rm -rf build *.so && python3 setup.py build_ext --inplace && cp -f *.so ../
+Exit Code: 0
+Duration: 44.726 seconds
+----------------------------------------------------------------------
+running build_ext
+W0731 15:30:49.536000 3253 torch/utils/cpp_extension.py:680] Attempted to use ninja as the BuildExtension backend but we could not find ninja.. Falling back to using the slow distutils backend.
+building 't4_kernels' extension
+creating build/temp.linux-x86_64-cpython-312/content/research/src
+creating build/temp.linux-x86_64-cpython-312/content/research/src/kernels
+x86_64-linux-gnu-g++ -fno-strict-overflow -Wsign-compare -DNDEBUG -g -O2 -Wall -g -fstack-protector-strong -Wformat -Werror=format-security -g -fwrapv -O2 -fPIC -I/usr/local/lib/python3.12/dist-packages/torch/include -I/usr/local/lib/python3.12/dist-packages/torch/include/torch/csrc/api/include -I/usr/local/cuda/include -I/usr/include/python3.12 -c /content/research/src/bindings.cpp -o build/temp.linux-x86_64-cpython-312/content/research/src/bindings.o -O3 -DTORCH_API_INCLUDE_EXTENSION_H -DTORCH_EXTENSION_NAME=t4_kernels -std=c++17
+/usr/local/cuda/bin/nvcc -I/usr/local/lib/python3.12/dist-packages/torch/include -I/usr/local/lib/python3.12/dist-packages/torch/include/torch/csrc/api/include -I/usr/local/cuda/include -I/usr/include/python3.12 -c /content/research/src/kernels/fused_w4a16_gemm.cu -o build/temp.linux-x86_64-cpython-312/content/research/src/kernels/fused_w4a16_gemm.o -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr --compiler-options '-fPIC' -O3 -gencode=arch=compute_75,code=sm_75 --use_fast_math -Xptxas=-v -DTORCH_API_INCLUDE_EXTENSION_H -DTORCH_EXTENSION_NAME=t4_kernels -std=c++17
+ptxas info    : 0 bytes gmem
+ptxas info    : Compiling entry function '_Z26fused_w4a16_gemv_s4_kernelPK6__halfPKjS1_S1_PS_iii' for 'sm_75'
+ptxas info    : Function properties for _Z26fused_w4a16_gemv_s4_kernelPK6__halfPKjS1_S1_PS_iii
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 30 registers, used 1 barriers, 1024 bytes smem, 404 bytes cmem[0]
+ptxas info    : Compile time = 11.480 ms
+ptxas info    : Compiling entry function '_Z26fused_w4a16_gemv_u4_kernelPK6__halfPKjS1_S1_PS_iii' for 'sm_75'
+ptxas info    : Function properties for _Z26fused_w4a16_gemv_u4_kernelPK6__halfPKjS1_S1_PS_iii
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 30 registers, used 1 barriers, 1024 bytes smem, 404 bytes cmem[0]
+ptxas info    : Compile time = 10.949 ms
+/usr/local/cuda/bin/nvcc -I/usr/local/lib/python3.12/dist-packages/torch/include -I/usr/local/lib/python3.12/dist-packages/torch/include/torch/csrc/api/include -I/usr/local/cuda/include -I/usr/include/python3.12 -c /content/research/src/kernels/h17_mega_kernel.cu -o build/temp.linux-x86_64-cpython-312/content/research/src/kernels/h17_mega_kernel.o -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr --compiler-options '-fPIC' -O3 -gencode=arch=compute_75,code=sm_75 --use_fast_math -Xptxas=-v -DTORCH_API_INCLUDE_EXTENSION_H -DTORCH_EXTENSION_NAME=t4_kernels -std=c++17
+ptxas info    : 0 bytes gmem
+ptxas info    : Compiling entry function '_Z41fused_h17_gemv_s3_warp_specialized_kernelPK6__halfPKjS1_S1_PS_iii' for 'sm_75'
+ptxas info    : Function properties for _Z41fused_h17_gemv_s3_warp_specialized_kernelPK6__halfPKjS1_S1_PS_iii
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 42 registers, used 1 barriers, 1024 bytes smem, 404 bytes cmem[0]
+ptxas info    : Compile time = 21.953 ms
+/usr/local/cuda/bin/nvcc -I/usr/local/lib/python3.12/dist-packages/torch/include -I/usr/local/lib/python3.12/dist-packages/torch/include/torch/csrc/api/include -I/usr/local/cuda/include -I/usr/include/python3.12 -c /content/research/src/kernels/lop3_dequant.cu -o build/temp.linux-x86_64-cpython-312/content/research/src/kernels/lop3_dequant.o -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr --compiler-options '-fPIC' -O3 -gencode=arch=compute_75,code=sm_75 --use_fast_math -Xptxas=-v -DTORCH_API_INCLUDE_EXTENSION_H -DTORCH_EXTENSION_NAME=t4_kernels -std=c++17
+ptxas info    : 0 bytes gmem
+ptxas info    : Compiling entry function '_Z23lop3_dequant_fp8_kernelPKjP6__halfPKS1_i' for 'sm_75'
+ptxas info    : Function properties for _Z23lop3_dequant_fp8_kernelPKjP6__halfPKS1_i
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 16 registers, used 0 barriers, 380 bytes cmem[0]
+ptxas info    : Compile time = 4.228 ms
+ptxas info    : Compiling entry function '_Z22lop3_dequant_s3_kernelPKjP6__halfPKS1_S4_i' for 'sm_75'
+ptxas info    : Function properties for _Z22lop3_dequant_s3_kernelPKjP6__halfPKS1_S4_i
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 18 registers, used 0 barriers, 388 bytes cmem[0]
+ptxas info    : Compile time = 4.865 ms
+ptxas info    : Compiling entry function '_Z22lop3_dequant_s4_kernelPKjP6__halfPKS1_S4_i' for 'sm_75'
+ptxas info    : Function properties for _Z22lop3_dequant_s4_kernelPKjP6__halfPKS1_S4_i
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 16 registers, used 0 barriers, 388 bytes cmem[0]
+ptxas info    : Compile time = 3.339 ms
+ptxas info    : Compiling entry function '_Z22lop3_dequant_u4_kernelPKjP6__halfPKS1_S4_i' for 'sm_75'
+ptxas info    : Function properties for _Z22lop3_dequant_u4_kernelPKjP6__halfPKS1_S4_i
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 16 registers, used 0 barriers, 388 bytes cmem[0]
+ptxas info    : Compile time = 3.804 ms
+creating build/lib.linux-x86_64-cpython-312
+x86_64-linux-gnu-g++ -fno-strict-overflow -Wsign-compare -DNDEBUG -g -O2 -Wall -g -fstack-protector-strong -Wformat -Werror=format-security -g -fwrapv -O2 -shared -Wl,-O1 -Wl,-Bsymbolic-functions -Wl,-Bsymbolic-functions -g -fwrapv -O2 build/temp.linux-x86_64-cpython-312/content/research/src/bindings.o build/temp.linux-x86_64-cpython-312/content/research/src/kernels/fused_w4a16_gemm.o build/temp.linux-x86_64-cpython-312/content/research/src/kernels/h17_mega_kernel.o build/temp.linux-x86_64-cpython-312/content/research/src/kernels/lop3_dequant.o -L/usr/local/lib/python3.12/dist-packages/torch/lib -L/usr/local/cuda/lib64 -L/usr/lib/x86_64-linux-gnu -lc10 -ltorch -ltorch_cpu -ltorch_python -lcudart -lc10_cuda -ltorch_cuda -o build/lib.linux-x86_64-cpython-312/t4_kernels.cpython-312-x86_64-linux-gnu.so
+copying build/lib.linux-x86_64-cpython-312/t4_kernels.cpython-312-x86_64-linux-gnu.so -> 

@@ -1,0 +1,28 @@
+=== TEST RUN: 04_microbenchmarks.log ===
+Command: nvcc -O3 -arch=sm_75 src/t4_microbenchmarks.cu -o t4_microbenchmark && ./t4_microbenchmark
+Exit Code: 0
+Duration: 11.326 seconds
+----------------------------------------------------------------------
+===================================================
+Tesla T4 (Turing CC 7.5) Hardware Micro-Benchmarks
+===================================================
+
+--- [1] Shared Memory Bank Conflict Benchmark ---
+Stride  1 ( 0-way conflict): 24726.0 total cycles (~24.73 cycles/access)
+Stride  2 ( 2-way conflict): 24834.0 total cycles (~24.83 cycles/access)
+Stride  4 ( 4-way conflict): 24624.0 total cycles (~24.62 cycles/access)
+Stride 32 (32-way conflict): 64358.0 total cycles (~64.36 cycles/access)
+
+--- [2] Pointer-Chasing Memory Latency Benchmark ---
+L1 Data Cache Latency : 45.6 cycles / load
+GDDR6 DRAM Latency    : 428.7 cycles / load
+
+--- [3] HMMA.884 Clock Throttling Profiling ---
+Profiling 100% Occupancy (1024 threads/SM)...
+  -> 100% Occupancy Duration: 449742814 cycles
+Profiling 25% Occupancy (256 threads/SM)...
+  -> 25% Occupancy Duration : 420000641 cycles
+
+===================================================
+[BENCHMARK COMPLETE] Empirical Measurements Collected.
+===================================================

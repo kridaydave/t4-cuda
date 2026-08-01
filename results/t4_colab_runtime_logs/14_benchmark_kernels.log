@@ -1,0 +1,25 @@
+=== TEST RUN: 14_benchmark_kernels.log ===
+Command: python3 tests/benchmark_kernels.py
+Exit Code: 0
+Duration: 15.697 seconds
+----------------------------------------------------------------------
+=====================================================================================
+Benchmark                 |     Latency |  Peak VRAM |  Bandwidth |  Speedup
+=====================================================================================
+Dequant 1024 packed       |    18.98 us |          - |   2.8 GB/s |        -
+Dequant 65536 packed      |    27.01 us |          - | 126.2 GB/s |        -
+Dequant 1048576 packed    |   174.18 us |          - | 313.1 GB/s |        -
+Dequant 16777216 packed   |  2680.83 us |          - | 325.4 GB/s |        -
+Base Attn Proj            |   145.98 us |   102.8 MB |          - |        -
+Fused Attn Proj           |    47.14 us |   102.8 MB |          - |    3.10x
+Base MLP Up               |   380.10 us |   151.2 MB |          - |        -
+Fused MLP Up              |   191.14 us |   151.2 MB |          - |    1.99x
+Base MLP Down             |   263.94 us |   150.9 MB |          - |        -
+Fused MLP Down            |   186.40 us |   150.9 MB |          - |    1.42x
+Base Vocab Proj           |  4192.26 us |  1371.6 MB |          - |        -
+Fused Vocab Proj          |  3524.61 us |  1371.6 MB |          - |    1.19x
+
+Summary against Targets:
+- H4 Target (2.50x SASS speedup): Check 'Speedup' column vs Base.
+- H7 Target (3.08x speedup, 303 GB/s): Check Dequant throughput.
+- H8 Target (94.2% fetch stall reduction): Indirectly measured by overall latency.

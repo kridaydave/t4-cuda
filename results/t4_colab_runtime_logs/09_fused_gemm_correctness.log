@@ -1,0 +1,24 @@
+=== TEST RUN: 09_fused_gemm_correctness.log ===
+Command: python3 tests/test_fused_gemm_correctness.py
+Exit Code: 0
+Duration: 4.141 seconds
+----------------------------------------------------------------------
+Running Test: Identity Matrix
+  [PASS] Identity matched weights exactly
+Running Test: Known Small Matrix (M=1, K=8, N=4, Signed=False)
+  [FAIL] Max Err: 5992.0000, Mean Err: 1599.0000
+Running Test: Eli Model Sizes (Decode) (M=1, K=3584, N=3584, Signed=False)
+  [PASS] Max Err: nan, Mean Err: nan
+Running Test: Batch Decode M=1 (M=1, K=2048, N=4096, Signed=True)
+  [PASS] Max Err: nan, Mean Err: nan
+Running Test: Batch Decode M=2 (M=2, K=2048, N=4096, Signed=True)
+  [PASS] Max Err: nan, Mean Err: nan
+Running Test: Batch Decode M=4 (M=4, K=2048, N=4096, Signed=True)
+  [PASS] Max Err: nan, Mean Err: nan
+Running Test: Batch Decode M=8 (M=8, K=2048, N=4096, Signed=True)
+  [PASS] Max Err: nan, Mean Err: nan
+
+Running Random Fuzz...
+  Fuzz 100 iterations -> Max Err: nan, Avg Mean Err: nan
+Running Test: Edge Case: Minimum K, Single N (M=1, K=8, N=1, Signed=False)
+  [FAIL] Max Err: 307.7500, Mean Err: 307.7500

@@ -1,0 +1,62 @@
+=== TEST RUN: 02_verify_dequant.log ===
+Command: python3 harness/verify_dequant.py
+Exit Code: 0
+Duration: 0.058 seconds
+----------------------------------------------------------------------
+===========================================================================
+  T4 CUDA Optimization: Unsigned & Signed INT4 LOP3 KAT Verification
+===========================================================================
+
+--- [MATH PROOF] Unsigned LOP3 IEEE-754 FP16 (0x6400 | u4) ---
+  u4= 0 (0x0) | Bits: 0x6400 | Decoded: 1024.0 | Expected: 1024.0 | Match: True
+  u4= 1 (0x1) | Bits: 0x6401 | Decoded: 1025.0 | Expected: 1025.0 | Match: True
+  u4= 2 (0x2) | Bits: 0x6402 | Decoded: 1026.0 | Expected: 1026.0 | Match: True
+  u4= 3 (0x3) | Bits: 0x6403 | Decoded: 1027.0 | Expected: 1027.0 | Match: True
+  u4= 4 (0x4) | Bits: 0x6404 | Decoded: 1028.0 | Expected: 1028.0 | Match: True
+  u4= 5 (0x5) | Bits: 0x6405 | Decoded: 1029.0 | Expected: 1029.0 | Match: True
+  u4= 6 (0x6) | Bits: 0x6406 | Decoded: 1030.0 | Expected: 1030.0 | Match: True
+  u4= 7 (0x7) | Bits: 0x6407 | Decoded: 1031.0 | Expected: 1031.0 | Match: True
+  u4= 8 (0x8) | Bits: 0x6408 | Decoded: 1032.0 | Expected: 1032.0 | Match: True
+  u4= 9 (0x9) | Bits: 0x6409 | Decoded: 1033.0 | Expected: 1033.0 | Match: True
+  u4=10 (0xA) | Bits: 0x640A | Decoded: 1034.0 | Expected: 1034.0 | Match: True
+  u4=11 (0xB) | Bits: 0x640B | Decoded: 1035.0 | Expected: 1035.0 | Match: True
+  u4=12 (0xC) | Bits: 0x640C | Decoded: 1036.0 | Expected: 1036.0 | Match: True
+  u4=13 (0xD) | Bits: 0x640D | Decoded: 1037.0 | Expected: 1037.0 | Match: True
+  u4=14 (0xE) | Bits: 0x640E | Decoded: 1038.0 | Expected: 1038.0 | Match: True
+  u4=15 (0xF) | Bits: 0x640F | Decoded: 1039.0 | Expected: 1039.0 | Match: True
+>> [MATH VERIFIED] Unsigned LOP3 exponent insertion is 100% exact.
+
+--- [MATH PROOF] Signed INT4 LOP3 LUT 0x6A (Bit 3 Inversion) ---
+  Raw 0x0 -> s4= 0 | Bit3 Flipped: 0x8 | Bits: 0x6408 | FP16: 1032.0 | (FP16 - 1032.0):   0.0 | Match: True
+  Raw 0x1 -> s4= 1 | Bit3 Flipped: 0x9 | Bits: 0x6409 | FP16: 1033.0 | (FP16 - 1032.0):   1.0 | Match: True
+  Raw 0x2 -> s4= 2 | Bit3 Flipped: 0xA | Bits: 0x640A | FP16: 1034.0 | (FP16 - 1032.0):   2.0 | Match: True
+  Raw 0x3 -> s4= 3 | Bit3 Flipped: 0xB | Bits: 0x640B | FP16: 1035.0 | (FP16 - 1032.0):   3.0 | Match: True
+  Raw 0x4 -> s4= 4 | Bit3 Flipped: 0xC | Bits: 0x640C | FP16: 1036.0 | (FP16 - 1032.0):   4.0 | Match: True
+  Raw 0x5 -> s4= 5 | Bit3 Flipped: 0xD | Bits: 0x640D | FP16: 1037.0 | (FP16 - 1032.0):   5.0 | Match: True
+  Raw 0x6 -> s4= 6 | Bit3 Flipped: 0xE | Bits: 0x640E | FP16: 1038.0 | (FP16 - 1032.0):   6.0 | Match: True
+  Raw 0x7 -> s4= 7 | Bit3 Flipped: 0xF | Bits: 0x640F | FP16: 1039.0 | (FP16 - 1032.0):   7.0 | Match: True
+  Raw 0x8 -> s4=-8 | Bit3 Flipped: 0x0 | Bits: 0x6400 | FP16: 1024.0 | (FP16 - 1032.0):  -8.0 | Match: True
+  Raw 0x9 -> s4=-7 | Bit3 Flipped: 0x1 | Bits: 0x6401 | FP16: 1025.0 | (FP16 - 1032.0):  -7.0 | Match: True
+  Raw 0xA -> s4=-6 | Bit3 Flipped: 0x2 | Bits: 0x6402 | FP16: 1026.0 | (FP16 - 1032.0):  -6.0 | Match: True
+  Raw 0xB -> s4=-5 | Bit3 Flipped: 0x3 | Bits: 0x6403 | FP16: 1027.0 | (FP16 - 1032.0):  -5.0 | Match: True
+  Raw 0xC -> s4=-4 | Bit3 Flipped: 0x4 | Bits: 0x6404 | FP16: 1028.0 | (FP16 - 1032.0):  -4.0 | Match: True
+  Raw 0xD -> s4=-3 | Bit3 Flipped: 0x5 | Bits: 0x6405 | FP16: 1029.0 | (FP16 - 1032.0):  -3.0 | Match: True
+  Raw 0xE -> s4=-2 | Bit3 Flipped: 0x6 | Bits: 0x6406 | FP16: 1030.0 | (FP16 - 1032.0):  -2.0 | Match: True
+  Raw 0xF -> s4=-1 | Bit3 Flipped: 0x7 | Bits: 0x6407 | FP16: 1031.0 | (FP16 - 1032.0):  -1.0 | Match: True
+>> [MATH VERIFIED] Signed LOP3 LUT 0x6A math is 100% exact for s4 in [-8..7].
+
+--- [KAT] Asymmetrical Non-Monotonic Known Answer Tests ---
+
+Unsigned KAT: W = 0xA7C13E59 | Scale = 0.25 | Zero = 2.0
+  Positional Nibbles (w0..w7): [9, 5, 14, 3, 1, 12, 7, 10]
+  Dequantized Output FP16:     [1.75, 0.75, 3.0, 0.25, -0.25, 2.5, 1.25, 2.0]
+  Expected Output FP16:        [1.75, 0.75, 3.0, 0.25, -0.25, 2.5, 1.25, 2.0]
+  >> [PASSED] Unsigned Asymmetrical KAT Match!
+
+Signed KAT (LUT 0x6A): W = 0xF817E29A | Scale = 0.5 | Zero = 0.0
+  Positional Signed s4 (w0..w7): [-6, -7, 2, -2, 7, 1, -8, -1]
+  Dequantized Output FP16:       [-3.0, -3.5, 1.0, -1.0, 3.5, 0.5, -4.0, -0.5]
+  Expected Output FP16:          [-3.0, -3.5, 1.0, -1.0, 3.5, 0.5, -4.0, -0.5]
+  >> [PASSED] Signed Asymmetrical KAT Match!
+
+[SUMMARY] All Unsigned (0xEA) & Signed (0x6A) LOP3 Math Proofs and KATs Passed!

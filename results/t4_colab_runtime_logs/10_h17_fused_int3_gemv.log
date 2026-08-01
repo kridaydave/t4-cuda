@@ -1,0 +1,54 @@
+=== TEST RUN: 10_h17_fused_int3_gemv.log ===
+Command: python3 tests/test_h17_fused_int3_gemv.py
+Exit Code: 0
+Duration: 7.659 seconds
+----------------------------------------------------------------------
+================================================================================
+      RUNNING HYPOTHESIS H17 FUSED INT3 MEGA-KERNEL SUITE
+================================================================================
+=== [KAT TEST] H17 INT3 3-Bit Packing and Unpacking KAT Vectors ===
+  [PASS] KAT 1: Bit-packing uint8 [0..7] -> 3 Bytes exact match.
+  [PASS] KAT 2: All-7s bit-packing -> 0xFFFFFF exact match.
+  [PASS] KAT 3: All-Zeros bit-packing -> 0x000000 exact match.
+
+=== [CORRECTNESS TEST] H17 Fused INT3 Dequant + GEMV vs References ===
+  [PASS] Grid B= 1, M=   1 | Fused Kernel Bitwise Match Diff=0.0e+00 | INT3 Relative RMSE=0.2086 (MSE=22.11), NF4 MSE=4.36
+  [PASS] Grid B= 1, M= 128 | Fused Kernel Bitwise Match Diff=0.0e+00 | INT3 Relative RMSE=0.2130 (MSE=23.56), NF4 MSE=4.35
+  [PASS] Grid B= 1, M=2048 | Fused Kernel Bitwise Match Diff=0.0e+00 | INT3 Relative RMSE=0.2136 (MSE=23.39), NF4 MSE=4.35
+  [PASS] Grid B= 4, M=   1 | Fused Kernel Bitwise Match Diff=3.5e-05 | INT3 Relative RMSE=0.2123 (MSE=24.03), NF4 MSE=4.56
+  [PASS] Grid B= 4, M= 128 | Fused Kernel Bitwise Match Diff=0.0e+00 | INT3 Relative RMSE=0.2130 (MSE=23.32), NF4 MSE=4.35
+  [PASS] Grid B= 4, M=2048 | Fused Kernel Bitwise Match Diff=0.0e+00 | INT3 Relative RMSE=0.2134 (MSE=23.30), NF4 MSE=4.32
+  [PASS] Grid B=16, M=   1 | Fused Kernel Bitwise Match Diff=5.7e-05 | INT3 Relative RMSE=0.2129 (MSE=23.56), NF4 MSE=4.34
+  [PASS] Grid B=16, M= 128 | Fused Kernel Bitwise Match Diff=0.0e+00 | INT3 Relative RMSE=0.2137 (MSE=23.35), NF4 MSE=4.32
+  [PASS] Grid B=16, M=2048 | Fused Kernel Bitwise Match Diff=0.0e+00 | INT3 Relative RMSE=0.2134 (MSE=23.32), NF4 MSE=4.33
+
+=== [EDGE CASES TEST] H17 Fused INT3 Mega-Kernel Edge Cases ===
+  [PASS] Edge Case 1: All Zeros input -> Output exactly 0.0.
+  [PASS] Edge Case 2: Negative Activations & Weights -> Correct positive dot product (960.00 vs expected 960.00).
+  [PASS] Edge Case 3: Positive-Only Range & Odd dimensions (K=13, N=1025) padding fix verified.
+  [PASS] Edge Case 4: Misaligned/corrupted byte stream truncated safely without crash.
+  [PASS] Edge Case 5: Extreme tensor size (K=8192, N=4096) handled seamlessly.
+
+=== [MICROBENCHMARK] Speed-of-Light & Latency / Bandwidth Comparison ===
+Simulating memory bandwidth bottleneck on GPU (T4 / A100 VRAM transfer bounds)...
+Batch (B) Seq (M)   FP16 Bytes    NF4 Bytes     INT3 Bytes    INT3 Latency    INT3 Speedup vs FP16
+--------------------------------------------------------------------------------------------------
+1         1         33.55         9.44          7.34          22.96          us  4.57              x
+1         128       33.55         9.44          7.34          26.21          us  4.12              x
+1         2048      33.55         9.44          7.34          75.37          us  2.09              x
+4         1         33.55         9.44          7.34          23.04          us  4.56              x
+4         128       33.55         9.44          7.34          36.04          us  3.27              x
+4         2048      33.55         9.44          7.34          232.65         us  1.35              x
+16        1         33.55         9.44          7.34          23.35          us  4.51              x
+16        128       33.55         9.44          7.34          75.37          us  2.09              x
+16        2048      33.55         9.44          7.34          861.80         us  1.10              x
+
+  [ASSERT] H17 Fused INT3 Mega-Kernel bandwidth reduction factor verified (~5.33x weight compression vs FP16).
+
+=== [ON-GPU EXTENSION TEST] H17 Fused INT3 CUDA Extension ===
+  Testing live CUDA execution of fused_h17_gemv_s3...
+  [PASS] Live GPU execution completed cleanly. Output shape: torch.Size([1, 512])
+
+================================================================================
+ALL TESTS PASSED SUCCESSFULLY! (0 Errors)
+================================================================================

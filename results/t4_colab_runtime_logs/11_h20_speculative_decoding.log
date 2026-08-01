@@ -1,0 +1,63 @@
+=== TEST RUN: 11_h20_speculative_decoding.log ===
+Command: python3 tests/test_h20_speculative_decoding.py
+Exit Code: 0
+Duration: 2.161 seconds
+----------------------------------------------------------------------
+================================================================================
+      RUNNING HYPOTHESIS H20 SPECULATIVE DECODING TEST SUITE
+================================================================================
+=== [KAT TEST] H20 Rejection Sampling Logic & Known Answer Vectors ===
+  [PASS] KAT 1: Perfect Agreement (alpha=1.0) -> Accepted 3/3 + Bonus token = [1, 2, 3, 4]
+  [PASS] KAT 2: Immediate Rejection (alpha=0.0) -> Rejection at pos 0, correctly resampled target token 0
+
+=== [EDGE CASES TEST] H20 Speculative Decoding Edge Cases ===
+  [PASS] Edge Case 1: alpha=0.0 -> E[accepted]=1.0 token, Speedup=0.986x (correct overhead penalty).
+  [PASS] Edge Case 2: alpha=1.0 -> E[accepted]=6.0 tokens, Speedup=5.91x.
+  [PASS] Edge Case 3: Extreme K_spec=10 (alpha=0.8) -> E[accepted]=4.57 tokens, Speedup=4.44x.
+  [PASS] Edge Case 4: Uniform distribution (32k vocab) -> Executed cleanly with 4 tokens emitted.
+
+=== [MICROBENCHMARK] Speculative Decoding T4 Latency & Speedup Analysis ===
+Parameters: 32B FP16 Target Model (64 GB) vs 0.5B INT3 Draft Model (0.1875 GB) on T4 GPU (320 GB/s)...
+
+  Baseline 32B Target Latency per Token: 200.00 ms (5.00 tok/s)
+  Draft 0.5B INT3 Latency per Token:    0.59 ms (1706.67 tok/s)
+
+===============================================================================================
+K_spec    Alpha     E[Accepted]     Cycle Time (ms)   Spec Tok/s      Speedup vs 32B      
+===============================================================================================
+1         0.25      1.25            200.59            6.23            1.25              x
+1         0.50      1.50            200.59            7.48            1.50              x
+1         0.75      1.75            200.59            8.72            1.74              x
+1         0.90      1.90            200.59            9.47            1.89              x
+1         0.95      1.95            200.59            9.72            1.94              x
+2         0.25      1.31            201.17            6.52            1.30              x
+2         0.50      1.75            201.17            8.70            1.74              x
+2         0.75      2.31            201.17            11.50           2.30              x
+2         0.90      2.71            201.17            13.47           2.69              x
+2         0.95      2.85            201.17            14.18           2.84              x
+3         0.25      1.33            201.76            6.58            1.32              x
+3         0.50      1.88            201.76            9.29            1.86              x
+3         0.75      2.73            201.76            13.55           2.71              x
+3         0.90      3.44            201.76            17.05           3.41              x
+3         0.95      3.71            201.76            18.39           3.68              x
+5         0.25      1.33            202.93            6.57            1.31              x
+5         0.50      1.97            202.93            9.70            1.94              x
+5         0.75      3.29            202.93            16.20           3.24              x
+5         0.90      4.69            202.93            23.09           4.62              x
+5         0.95      5.30            202.93            26.11           5.22              x
+8         0.25      1.33            204.69            6.51            1.30              x
+8         0.50      2.00            204.69            9.75            1.95              x
+8         0.75      3.70            204.69            18.07           3.61              x
+8         0.90      6.13            204.69            29.93           5.99              x
+8         0.95      7.40            204.69            36.13           7.23              x
+10        0.25      1.33            205.86            6.48            1.30              x
+10        0.50      2.00            205.86            9.71            1.94              x
+10        0.75      3.83            205.86            18.61           3.72              x
+10        0.90      6.86            205.86            33.33           6.67              x
+10        0.95      8.62            205.86            41.89           8.38              x
+
+  [ASSERT] Hypothesis H20 Verified: Speculative Decoding achieves 4.09x speedup at K_spec=5, alpha=0.85 on T4 GPU.
+
+================================================================================
+ALL TESTS PASSED SUCCESSFULLY! (0 Errors)
+================================================================================

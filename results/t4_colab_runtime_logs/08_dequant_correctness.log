@@ -1,0 +1,36 @@
+=== TEST RUN: 08_dequant_correctness.log ===
+Command: python3 tests/test_dequant_correctness.py
+Exit Code: 1
+Duration: 3.655 seconds
+----------------------------------------------------------------------
+================================================================================
+CUDA Dequantize (u4 & s4) Correctness Tests
+================================================================================
+Test Name                           | Status | Max Error    | Mean Error
+--------------------------------------------------------------------------------
+KAT Test (H4) - u4                  | [91mFAIL[0m | Max Err: nan | Mean Err: nan
+KAT Test (H4) - s4                  | [91mFAIL[0m | Max Err: nan | Mean Err: nan
+KAT Test (All Zeros) - u4           | [91mFAIL[0m | Max Err: 1.0240e+03 | Mean Err: 1.0240e+03
+KAT Test (All Zeros) - s4           | [91mFAIL[0m | Max Err: 1.0320e+03 | Mean Err: 1.0320e+03
+KAT Test (All Ones) - u4            | [91mFAIL[0m | Max Err: nan | Mean Err: nan
+KAT Test (All Ones) - s4            | [91mFAIL[0m | Max Err: nan | Mean Err: nan
+KAT Test (Identity) - u4            | [91mFAIL[0m | Max Err: 2.4896e+04 | Mean Err: 3.9138e+03
+KAT Test (Identity) - s4            | [91mFAIL[0m | Max Err: 2.5024e+04 | Mean Err: 3.9357e+03
+Exhaustive Nibble Sweep - u4        | [91mFAIL[0m | Max Err: nan | Mean Err: nan
+Exhaustive Nibble Sweep - s4        | [91mFAIL[0m | Max Err: nan | Mean Err: nan
+Random Fuzz (10K) - u4              | [91mFAIL[0m | Max Err: nan | Mean Err: nan
+Random Fuzz (10K) - s4              | [91mFAIL[0m | Max Err: nan | Mean Err: nan
+Batch Size Stress (1) - u4          | [91mFAIL[0m | Max Err: 1.2448e+04 | Mean Err: 1.9569e+03
+Batch Size Stress (1) - s4          | [91mFAIL[0m | Max Err: 1.2504e+04 | Mean Err: 1.9668e+03
+Batch Size Stress (256) - u4        | [91mFAIL[0m | Max Err: 1.2448e+04 | Mean Err: 1.9569e+03
+Batch Size Stress (256) - s4        | [91mFAIL[0m | Max Err: 1.2504e+04 | Mean Err: 1.9668e+03
+Batch Size Stress (4096) - u4       | [91mFAIL[0m | Max Err: 1.2448e+04 | Mean Err: 1.9569e+03
+Batch Size Stress (4096) - s4       | [91mFAIL[0m | Max Err: 1.2504e+04 | Mean Err: 1.9668e+03
+Batch Size Stress (1000000) - u4    | [91mFAIL[0m | Max Err: 1.2448e+04 | Mean Err: 1.9569e+03
+Batch Size Stress (1000000) - s4    | [91mFAIL[0m | Max Err: 1.2504e+04 | Mean Err: 1.9668e+03
+Scale Edge (scale=0) - u4           | [92mPASS[0m | Max Err: 0.0000e+00 | Mean Err: 0.0000e+00
+Scale Edge (scale=65k) - u4         | [91mFAIL[0m | Max Err: inf | Mean Err: inf
+Scale Edge (scale=1e-5) - u4        | [91mFAIL[0m | Max Err: 2.4927e-01 | Mean Err: 3.9187e-02
+================================================================================
+SUMMARY: 1/23 Tests Passed
+================================================================================

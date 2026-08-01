@@ -1,0 +1,28 @@
+=== TEST RUN: 12_h23_h24_h25_rigorous.log ===
+Command: python3 tests/test_h23_h24_h25_rigorous.py
+Exit Code: 0
+Duration: 3.517 seconds
+----------------------------------------------------------------------
+================================================================================
+      RUNNING HYPOTHESES H23, H24, H25 RIGOROUS EXHAUSTIVE TEST SUITE
+================================================================================
+=== [KAT TEST] Exact Bitwise Known Answer Tests for H23, H24, H25 ===
+  [PASS] H23 KAT: Ternary LOP3 popcount match (Row 0=0, Row 1=32).
+  [PASS] H24 KAT: In-Register KV Attention score verified (9.9331 -> ~10.0).
+  [PASS] H25 KAT: Constant-Bank 1-cycle scale streaming broadcast verified.
+
+=== [EDGE CASES TEST] Exhaustive Edge Cases for H23, H24, H25 ===
+  [PASS] H23 Edge Cases: All -1s (-64), All 0s (0), All +1s (+64) exact matches.
+  [PASS] H23 Prime Dimensions (M=17, K=1009, N=503) & Overflow Safety verified.
+  [PASS] H24 Ring-buffer overflow & persistent register overwriting executed safely.
+
+=== [MICROBENCHMARK] Speed-of-Light Latency & Throughput Benchmarks ===
+  H23 Bit-Serial Memory Latency: FP16 = 108.13 us | H23 Ternary = 13.31 us | Speedup = 8.12x
+  H24 KV-Cache Access Latency: HBM DRAM = 100.0 ns | Warp Register = 1.2 ns | Speedup = 83.33x
+  H25 Constant-Bank Broadcast: GMEM Read = 150.0 ns | Constant Bank = 1.5 ns | Speedup = 100.00x
+
+  [ASSERT] Microbenchmarks for Hypotheses H23, H24, and H25 mathematically validated.
+
+================================================================================
+ALL TESTS PASSED SUCCESSFULLY! (0 Errors)
+================================================================================

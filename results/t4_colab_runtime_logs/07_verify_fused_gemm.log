@@ -1,0 +1,21 @@
+=== TEST RUN: 07_verify_fused_gemm.log ===
+Command: python3 harness/verify_fused_gemm.py
+Exit Code: 1
+Duration: 22.753 seconds
+----------------------------------------------------------------------
+
+==========================================================================
+  Tesla T4 Fused W4A16 GEMM Numerical Accuracy Verification
+==========================================================================
+Matrix Dimensions: M=1, K=1024, N=1024
+Fused Output (u4):     tensor([nan, nan, nan, nan, nan], device='cuda:0', dtype=torch.float16)
+Reference Output (u4): tensor([18.7188,  6.6484,  4.6406,  3.2012,  0.8901], device='cuda:0',
+       dtype=torch.float16)
+[Unsigned U4 Fused GEMM] Max Abs Diff: nan
+Traceback (most recent call last):
+  File "/content/research/harness/verify_fused_gemm.py", line 95, in <module>
+    test_fused_gemm_correctness()
+  File "/content/research/harness/verify_fused_gemm.py", line 79, in test_fused_gemm_correctness
+    assert diff_u4 < 2.0, f"Unsigned Fused GEMM accuracy check failed with error {diff_u4}"
+           ^^^^^^^^^^^^^
+AssertionError: Unsigned Fused GEMM accuracy check failed with error nan

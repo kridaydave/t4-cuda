@@ -1,5 +1,5 @@
-version: "9.1.0"
-updated_at: "2026-07-30T23:59:00+05:30"
+version: "9.2.0"
+updated_at: "2026-08-01T00:00:00+05:30"
 phase: "EMPIRICAL_VALIDATION_COMPLETE"
 
 target_hardware:
@@ -74,9 +74,9 @@ hypotheses:
     status: "SIMULATED_AND_FORMALLY_PROVED"
     target_metric: "94.2% Fetch Stall Reduction"
   - id: "H9"
-    name: "Fused FP8 E4M3 LOP3 Exponent Rescaling"
+    name: "Fused FP8 E4M3 Emulation on Turing FP16 Tensor Cores (integer ADD +0x20002000 re-bias + bitwise OR; NOT a lop3.b32 path)"
     status: "EMPIRICALLY_VERIFIED_ON_HARDWARE"
-    target_metric: "11.0x Inst Speedup, 60.1 TFLOPS Compute"
+    target_metric: "FP8 E4M3->FP16 bit-exact 254/254 states (KAT). NOTE: the 11.0x SASS speedup and '2 SASS inst' figures were derived for the EARLIER lop3.b32 0xEA formulation and are UNMEASURED for the committed integer ADD+OR path; 60.1 TFLOPS is a roofline projection, not a measured result."
     empirical_verified:
       date: "2026-07-31"
       kat_bit_exact: true
@@ -94,23 +94,13 @@ hypotheses:
 # =============================================================================
   - id: "H17"
     name: "Fused INT3 Dequant + Warp-Specialized GEMV Mega-Kernel"
-    status: "PROPOSED"
+    status: "SIMULATED_AND_IMPLEMENTED_IN_CUDA"
     target_metric: "2.5-4.5x decode speedup vs NF4 BitsAndBytes baseline on T4"
     rationale: "Combine H7 (INT3 LOP3 dequant) + H8 (producer/consumer warp split) into a single fused decode kernel. Producer warps fetch packed INT3 weights and LOP3-dequant to FP16 in SMEM. Consumer warps run WMMA. Eliminates all intermediate DRAM traffic."
     predecessors: ["H7", "H8"]
     reference: "Marlin kernel architecture (async dequant inside GEMM mainloop)"
 
-  - id: "H18"
-    name: "Albert-as-Taste-Judge RLAIF Pipeline"
-    status: "KILLED"
-    rationale: "REMOVED: Taste is human-defined. No model (including frontier APIs) has the specific taste signal the founder wants. The human IS the judge. DPO pairs curated manually are the taste signal. Automated taste judges are not viable for this project."
-
-  - id: "H19"
-    name: "Activation Steering Persona Vectors for Eli/Theo/Albert"
-    status: "PROPOSED"
-    target_metric: "Persona persistence > 0.8 coherence score at turn 10+"
-    rationale: "Extract linear persona directions from model activations (directness, warmth, depth) and apply as inference-time steering vectors. Eliminates system prompt dependency, solves personality drift, and frees context window tokens. 2026 SOTA approach."
-    reference: "Representation Engineering (Zou et al. 2023), Persona Vectors (2026)"
+  # --- Persona hypotheses H18/H19 moved to persona-hypotheses.yaml (2026-08-01). ---
 
   - id: "H20"
     name: "Speculative Decoding with INT3-Quantized 0.5B Draft Model"
@@ -119,12 +109,7 @@ hypotheses:
     rationale: "Build ultra-fast 0.5B draft model optimized with H7 INT3 kernels. Fits entirely in L2 cache (4MB). Draft tokens verified by Albert in single forward pass. T4 is memory-bandwidth bound, making speculative decoding especially effective at low batch sizes."
     reference: "ML-SpecQD, Medusa, EAGLE-3"
 
-  - id: "H21"
-    name: "Automated Format Disambiguation & Persona Persistence Evaluation"
-    status: "PROPOSED"
-    target_metric: "Format bleed rate < 5%, Persona coherence > 0.8 at turn 6+"
-    rationale: "eval_emergence.py currently has no automated scoring and doesn't test for the documented 34.4% tool-wrapper bleed or multi-turn persona drift. Build automated classifiers to measure both."
-    reference: "Phase-2 expansion spec Section 2.1, emergence-experiment-protocol.md"
+  # --- Persona hypothesis H21 moved to persona-hypotheses.yaml (2026-08-01). ---
 
   - id: "H22"
     name: "INT3/INT4 QAT Pipeline for Turing-Optimized Deployment"
@@ -164,13 +149,7 @@ hypotheses:
 # =============================================================================
 # HYPOTHESES H26-H33: Registered from 2026-07-29 sweep (reading between lines)
 # =============================================================================
-  - id: "H26"
-    name: "Quantization-Aware Persona Vector Extraction & Verification"
-    status: "PROPOSED"
-    target_metric: "Persona-vector cosine drift FP16→INT4→INT3 quantified; steering efficacy margin reported; extraction redone on deployment model if degraded"
-    rationale: "ArXiv searches for steering×quantization return ZERO results across INT3/INT4/GPTQ/AWQ. Only HELIX (steering works on 4-bit) and GUARD-IT (steering survives quantization better than weight edits) are adjacent. Nobody has measured whether FP16-extracted persona vectors survive INT3 weight quantization. If they break silently, H19 fails invisibly; if they survive with margin, that measurement is itself a contribution. Directly load-bearing: Epoch serves Eli/Theo/Albert INT3-quantized on T4."
-    predecessors: ["H19"]
-    reference: "HELIX (arXiv 2602.17691), GUARD-IT (arXiv 2605.12765), Persona Vectors (arXiv 2507.21509)"
+  # --- Persona hypothesis H26 moved to persona-hypotheses.yaml (2026-08-01). ---
 
   - id: "H27"
     name: "Rotation-Fused MXFP4-W / FP16-A GEMV for Turing"
@@ -204,29 +183,7 @@ hypotheses:
     predecessors: ["H8"]
     reference: "Tawa (arXiv 2510.14719), Cypress (arXiv 2504.07004)"
 
-  - id: "H31"
-    name: "Multi-Persona Coexistence Without Directional Dominance"
-    status: "PROPOSED"
-    target_metric: "Eli/Theo/Albert simultaneously expressible from one model: per-persona turn-N trait expression within 10% of single-persona steering; zero observed dominance or echo events over 100-turn mixed sessions"
-    rationale: "Creative Collision (2606.16240) documents that superimposed persona vectors can dominate/suppress each other across the whole interpolation range; the 53-trait audit (2607.13162) shows two steerable traits composed can collapse while pairs involving a default never do; SPASM (2604.09212) documents LLM-LLM echoing. Serving Eli/Theo/Albert from shared vectors will hit all three failure modes. Scheduled/orthogonalized (SAS-style residualization) or per-turn routed steering is unclaimed."
-    predecessors: ["H19", "H26"]
-    reference: "Creative Collision (arXiv 2606.16240), 53-trait audit (arXiv 2607.13162), SPASM (arXiv 2604.09212)"
-
-  - id: "H32"
-    name: "Format-Bleed Rate as First-Class Persistence Metric"
-    status: "PROPOSED"
-    target_metric: "Format-bleed rate (fraction of turns violating persona formatting contract) defined, measured, and shown to LEAD embedding/judged drift signals by >= 2 turns; correlated against Assistant-Axis deviation"
-    rationale: "ContextEcho (2605.24279) observes drift breaking formatting contracts but never operationalizes it. 'Format bleed / format disambiguation' as named constructs have zero arXiv hits — our coinage. Becomes the differentiating contribution of H21 against the now-standard GCAD/Abdulhai/Assistant-Axis metric suite."
-    predecessors: ["H21"]
-    reference: "ContextEcho (arXiv 2605.24279), GCAD (arXiv 2605.10664), Assistant Axis (arXiv 2601.10387)"
-
-  - id: "H33"
-    name: "Steerability Regression Probes for Deployment"
-    status: "PROPOSED"
-    target_metric: "Predict per-concept steerability from early hidden states (target 0.7 macro-F1, matching ASTEER) and re-scan optimal steering layer per persona after any model/template/quantization change; detect config rot before deployment"
-    rationale: "Adversarial Robustness of Activation Steering (2606.07696) shows the optimal steering layer shifts by up to 17 positions under input perturbation and directional robustness drops <= 64%. Fixed layer/coefficient configs rot in production; a lightweight pre-deployment probe is engineering-shaped, unbuilt, and directly serves the T4 serving pipeline."
-    predecessors: ["H19"]
-    reference: "ASTEER (arXiv 2606.11599), Adversarial Robustness of Activation Steering (arXiv 2606.07696)"
+  # --- Persona hypotheses H31/H32/H33 moved to persona-hypotheses.yaml (2026-08-01). ---
 
 
 # =============================================================================
@@ -249,13 +206,9 @@ novelty_audit_2026_07_29:
 
 
 # =============================================================================
-# DATA QUALITY AUDIT (2026-07-26)
+# DATA QUALITY AUDIT (2026-07-26) — moved to persona-hypotheses.yaml
+# (persona training-data pipeline; no CUDA kernel dependency).
 # =============================================================================
-data_quality:
-  execution_verification: "INTENTIONAL_STUB — deferred to Epoch-2 (requires CI infrastructure)"
-  dpo_leak_check: "CLEAN — 0 'rejected' fields found in SFT blend"
-  blended_composition: "24792 base SFT + 2730 cross-axis + 1000 format disambig + 200 multiturn + other = 30200 total"
-  dpo_v2_quality: "1200 pairs across 6 pillars, 7 degradation types — well-structured"
 
 # =============================================================================
 # EMPIRICAL VALIDATION — Tesla T4 Hardware Run (2026-07-30)
@@ -273,8 +226,8 @@ empirical_validation:
     - "H4 signed/unsigned INT4 LOP3: KAT bit-exact (0 diff) on 0xA7C13E59 and 0xF817E29A"
     - "H4 compile audit: 30 registers/thread (limit 64), 0 stack spills, 0 barriers (dequant), 1 barrier (GEMM)"
     - "Fused W4A16 GEMM: max_abs_diff 1.58594 (u4/s4) vs PyTorch matmul, within 2.0 gate"
-    - "H7 INT3 math identity: 8/8 states s3+4 == sign_invert(s3) — no CUDA kernel yet"
-    - "H9 FP8 E4M3 sweep: 254/254 valid states exact — no CUDA kernel yet"
+    - "H7 INT3 LOP3 (LUT 0x6A) kernel: KAT bit-exact (0.0 diff) on physical T4; 18 regs/thread, 0 spills; 4096x4096 exec 1.372 ms"
+    - "H9 FP8 E4M3 ADD+OR kernel: 254/254 valid states exact (0.0 diff); 16 regs/thread, 0 spills; 4096x4096 exec 0.161 ms. SASS speedup vs cast UNMEASURED for the add+OR path (11.0x figure was for the earlier LOP3 formulation)."
 
   numerical_residual:
     metric: "random_allclose max_abs_diff"

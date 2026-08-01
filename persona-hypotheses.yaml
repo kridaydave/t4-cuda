@@ -1,0 +1,84 @@
+# =============================================================================
+# PERSONA / ACTIVATION-STEERING HYPOTHESES (split out of research-state.yaml)
+# =============================================================================
+# These hypotheses concern persona vectors, activation steering, and multi-turn
+# persona persistence for the Eli/Theo/Albert product line. They have NO
+# corresponding CUDA/systems code in this repo and were previously interleaved
+# into research-state.yaml (H18/H19/H21/H26/H31/H32/H33) plus a DPO/SFT
+# data-quality audit block. Moved here 2026-08-01 to keep the t4-cuda systems
+# manifest focused on hardware kernels. System-side hypotheses (H20/H22/H24/
+# H27/H28/H29/H30) remain in research-state.yaml.
+# =============================================================================
+
+version: "1.0"
+split_from: "research-state.yaml v9.1.0"
+split_date: "2026-08-01"
+
+hypotheses:
+  - id: "H18"
+    name: "Albert-as-Taste-Judge RLAIF Pipeline"
+    status: "KILLED"
+    rationale: "REMOVED: Taste is human-defined. No model (including frontier APIs) has the specific taste signal the founder wants. The human IS the judge. DPO pairs curated manually are the taste signal. Automated taste judges are not viable for this project."
+
+  - id: "H19"
+    name: "Activation Steering Persona Vectors for Eli/Theo/Albert"
+    status: "PROPOSED"
+    target_metric: "Persona persistence > 0.8 coherence score at turn 10+"
+    rationale: "Extract linear persona directions from model activations (directness, warmth, depth) and apply as inference-time steering vectors. Eliminates system prompt dependency, solves personality drift, and frees context window tokens. 2026 SOTA approach."
+    reference: "Representation Engineering (Zou et al. 2023), Persona Vectors (2026)"
+    novelty_audit_2026_07_29: "PARTIALLY-SCOOPED — GCAD owns generic multi-turn steering numbers; PSR (ICML'26) shows token-uniform steering unfaithful. Open: multi-persona coexistence (H31), INT3 steering (H26)."
+
+  - id: "H21"
+    name: "Automated Format Disambiguation & Persona Persistence Evaluation"
+    status: "PROPOSED"
+    target_metric: "Format bleed rate < 5%, Persona coherence > 0.8 at turn 6+"
+    rationale: "eval_emergence.py currently has no automated scoring and doesn't test for the documented 34.4% tool-wrapper bleed or multi-turn persona drift. Build automated classifiers to measure both."
+    reference: "Phase-2 expansion spec Section 2.1, emergence-experiment-protocol.md"
+    novelty_audit_2026_07_29: "PARTIALLY-SCOOPED persistence half / NOVEL format-bleed half — ContextEcho adopted as harness; format-bleed coinage is ours (H32)."
+
+  - id: "H26"
+    name: "Quantization-Aware Persona Vector Extraction & Verification"
+    status: "PROPOSED"
+    target_metric: "Persona-vector cosine drift FP16->INT4->INT3 quantified; steering efficacy margin reported; extraction redone on deployment model if degraded"
+    rationale: "ArXiv searches for steering x quantization return ZERO results across INT3/INT4/GPTQ/AWQ. Only HELIX (steering works on 4-bit) and GUARD-IT (steering survives quantization better than weight edits) are adjacent. Nobody has measured whether FP16-extracted persona vectors survive INT3 weight quantization. If they break silently, H19 fails invisibly; if they survive with margin, that measurement is itself a contribution. Directly load-bearing: Epoch serves Eli/Theo/Albert INT3-quantized on T4."
+    predecessors: ["H19"]
+    reference: "HELIX (arXiv 2602.17691), GUARD-IT (arXiv 2605.12765), Persona Vectors (arXiv 2507.21509)"
+
+  - id: "H31"
+    name: "Multi-Persona Coexistence Without Directional Dominance"
+    status: "PROPOSED"
+    target_metric: "Eli/Theo/Albert simultaneously expressible from one model: per-persona turn-N trait expression within 10% of single-persona steering; zero observed dominance or echo events over 100-turn mixed sessions"
+    rationale: "Creative Collision (2606.16240) documents that superimposed persona vectors can dominate/suppress each other across the whole interpolation range; the 53-trait audit (2607.13162) shows two steerable traits composed can collapse while pairs involving a default never do; SPASM (2604.09212) documents LLM-LLM echoing. Serving Eli/Theo/Albert from shared vectors will hit all three failure modes. Scheduled/orthogonalized (SAS-style residualization) or per-turn routed steering is unclaimed."
+    predecessors: ["H19", "H26"]
+    reference: "Creative Collision (arXiv 2606.16240), 53-trait audit (arXiv 2607.13162), SPASM (arXiv 2604.09212)"
+
+  - id: "H32"
+    name: "Format-Bleed Rate as First-Class Persistence Metric"
+    status: "PROPOSED"
+    target_metric: "Format-bleed rate (fraction of turns violating persona formatting contract) defined, measured, and shown to LEAD embedding/judged drift signals by >= 2 turns; correlated against Assistant-Axis deviation"
+    rationale: "ContextEcho (2605.24279) observes drift breaking formatting contracts but never operationalizes it. 'Format bleed / format disambiguation' as named constructs have zero arXiv hits — our coinage. Becomes the differentiating contribution of H21 against the now-standard GCAD/Abdulhai/Assistant-Axis metric suite."
+    predecessors: ["H21"]
+    reference: "ContextEcho (arXiv 2605.24279), GCAD (arXiv 2605.10664), Assistant Axis (arXiv 2601.10387)"
+
+  - id: "H33"
+    name: "Steerability Regression Probes for Deployment"
+    status: "PROPOSED"
+    target_metric: "Predict per-concept steerability from early hidden states (target 0.7 macro-F1, matching ASTEER) and re-scan optimal steering layer per persona after any model/template/quantization change; detect config rot before deployment"
+    rationale: "Adversarial Robustness of Activation Steering (2606.07696) shows the optimal steering layer shifts by up to 17 positions under input perturbation and directional robustness drops <= 64%. Fixed layer/coefficient configs rot in production; a lightweight pre-deployment probe is engineering-shaped, unbuilt, and directly serves the T4 serving pipeline."
+    predecessors: ["H19"]
+    reference: "ASTEER (arXiv 2606.11599), Adversarial Robustness of Activation Steering (arXiv 2606.07696)"
+
+# =============================================================================
+# DATA QUALITY AUDIT (2026-07-26) — persona/training-data pipeline; no CUDA
+# kernel dependency. Moved here from research-state.yaml.
+# =============================================================================
+data_quality:
+  execution_verification: "INTENTIONAL_STUB — deferred to Epoch-2 (requires CI infrastructure)"
+  dpo_leak_check: "CLEAN — 0 'rejected' fields found in SFT blend"
+  blended_composition: "24792 base SFT + 2730 cross-axis + 1000 format disambig + 200 multiturn + other = 30200 total"
+  dpo_v2_quality: "1200 pairs across 6 pillars, 7 degradation types — well-structured"
+
+# Persona-side research sequence (from 2026-07-29 sweep):
+#   H26 first (does steering survive INT3?) -> H19 engineering -> H21 eval
+#   (with H32 metric) -> H31 coexistence -> H33 regression probes.
+

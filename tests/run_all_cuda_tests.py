@@ -73,8 +73,8 @@ def check_kernels_built():
     try:
         import t4_kernels
         print(f"  {GREEN}t4_kernels extension found{RESET}")
-        funcs = ['dequantize_u4', 'dequantize_s4',
-                 'fused_w4a16_gemm_u4', 'fused_w4a16_gemm_s4']
+        funcs = ['dequantize_u4', 'dequantize_s4', 'dequantize_s3', 'dequantize_fp8',
+                 'fused_w4a16_gemm_u4', 'fused_w4a16_gemm_s4', 'fused_h17_gemv_s3']
         for f in funcs:
             if hasattr(t4_kernels, f):
                 print(f"    ✓ {f}")
@@ -169,6 +169,7 @@ def main():
         tests = [
             (TESTS_DIR / "test_dequant_correctness.py", "LOP3 Dequantization (U4 + S4)"),
             (TESTS_DIR / "test_fused_gemm_correctness.py", "Fused W4A16 GEMM (U4 + S4)"),
+            (TESTS_DIR / "test_h17_fused_int3_gemv.py", "H17 Fused INT3 Dequant + GEMV Mega-Kernel"),
         ]
 
         for script, label in tests:

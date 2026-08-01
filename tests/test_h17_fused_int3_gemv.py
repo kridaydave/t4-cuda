@@ -417,6 +417,116 @@ def test_microbenchmarks_speed_of_light():
     print("\n  [ASSERT] H17 Fused INT3 Mega-Kernel bandwidth reduction factor verified (~5.33x weight compression vs FP16).")
 
 
+# -----------------------------------------------------------------------------
+# Canonical H17 packing helpers (10 signed INT3 per uint32; group=100 along K).
+# These match the kernel contract in src/kernels/h17_mega_kernel.h exactly:
+#   W_packed : (K/10, N) row-major uint32; bits [3*i : 3*i+2] = INT3 element i.
+#   dequant  : w = (tc3(q) - zp) * scale,  tc3(q) = q-8 if q>=4 else q in [-4,3].
+# -----------------------------------------------------------------------------
+def pack_int3_canonical_10per32(q_uint):
+    """Pack (N, K) uint q-values (0..7) into (K/10, N) uint32 words (row-major)."""
+    N, K = q_uint.shape
+    assert K % 10 == 0, "K must be a multiple of 10 for 10-per-uint32 packing"
+    nwords = K // 10
+    q = q_uint.astype(np.uint32).reshape(N, nwords, 10)
+    shifts = (np.arange(10, dtype=np.uint32) * 3).reshape(1, 1, 10)
+    words = ((q << shifts).sum(axis=2)).astype(np.uint32)      # (N, nwords)
+    return np.ascontiguousarray(words.T)                        # (nwords, N) C-contiguous
+
+
+def quantize_int3_canonical(W_np, group_size=100):
+    """Affine INT3 quantization matching the H17 kernel contract.
+    Returns packed (K/10, N) uint32, scales (num_groups, N) fp32, zp (num_groups, N) fp32."""
+    N, K = W_np.shape
+    assert K % 10 == 0, "K must be a multiple of 10"
+    num_groups = (K + group_size - 1) // group_size
+    pad = num_groups * group_size - K
+    if pad > 0:
+        W_np = np.concatenate([W_np, np.zeros((N, pad), dtype=np.float32)], axis=1)
+    Wg = W_np.reshape(N, num_groups, group_size)
+    wmin = Wg.min(axis=2)
+    wmax = Wg.max(axis=2)
+    span = (wmax - wmin)
+    scale = np.where(span > 0, span / 7.0, 1.0)                # (N, num_groups)
+    zp = -4.0 - wmin / scale                                   # tc-units, (N, num_groups)
+    tc = np.clip(np.round(Wg / scale[:, :, None] + zp[:, :, None]), -4, 3).astype(np.int32)
+    q = (tc & 0x7).astype(np.uint32)                           # (N, num_groups, group_size)
+    q = q.reshape(N, num_groups * group_size)[:, :K]           # trim padding -> (N, K)
+    packed = pack_int3_canonical_10per32(q)                    # (K/10, N)
+    return packed, np.ascontiguousarray(scale.T), np.ascontiguousarray(zp.T)
+
+
+def cpu_ref_h17_gemv(A_np, packed, scales_gn, zps_gn, group_size=100):
+    """CPU reference GEMV mirroring the kernel datapath: FP16 dequant, FP32 accumulate."""
+    M, K = A_np.shape
+    nwords, N = packed.shape
+    C = np.zeros((M, N), dtype=np.float32)
+    for n in range(N):
+        for k in range(K):
+            q = (int(packed[k // 10, n]) >> (3 * (k % 10))) & 0x7
+            tc = q - 8 if q >= 4 else q
+            g = k // group_size
+            w_f16 = float(np.float16((tc - float(zps_gn[g, n])) * float(scales_gn[g, n])))
+            for m in range(M):
+                C[m, n] += w_f16 * float(np.float16(A_np[m, k]))
+    return C
+
+
+def test_h17_gpu_extension():
+    print("\n=== [ON-GPU EXTENSION TEST] H17 Fused INT3 CUDA Extension ===")
+    if not HAS_TORCH or not torch.cuda.is_available():
+        print("  [SKIP] CUDA GPU not available - skipping live GPU kernel call.")
+        return
+    try:
+        import t4_kernels
+    except ImportError:
+        print("  [SKIP] t4_kernels PyTorch C++ extension not compiled - skipping live GPU call.")
+        return
+    if not hasattr(t4_kernels, 'fused_h17_gemv_s3'):
+        print("  [SKIP] fused_h17_gemv_s3 missing from t4_kernels.")
+        return
+
+    # Deterministic, NON-ZERO data. K=200 -> 2 quant groups (group=100), which
+    # exercises the kernel's per-group scale/zp refetch path. K must be a
+    # multiple of 10 (10 INT3 per uint32).
+    rng = np.random.default_rng(20260731)
+    M, K, N = 1, 200, 64
+    A_np = (rng.standard_normal((M, K)) * 0.5).astype(np.float32)
+    W_np = (rng.standard_normal((N, K)) * 0.5).astype(np.float32)
+
+    packed, scales_gn, zps_gn = quantize_int3_canonical(W_np, group_size=100)
+    num_groups = scales_gn.shape[0]
+    assert packed.shape == (K // 10, N), f"packed shape {packed.shape}"
+    assert scales_gn.shape == (num_groups, N), f"scales shape {scales_gn.shape}"
+
+    # CPU reference (FP16 dequant + FP32 accumulate, mirroring the kernel datapath)
+    C_ref = cpu_ref_h17_gemv(A_np, packed, scales_gn, zps_gn, group_size=100)
+
+    A_gpu = torch.tensor(A_np, dtype=torch.float16, device='cuda')
+    W_packed_gpu = torch.tensor(packed.astype(np.int32), dtype=torch.int32, device='cuda')
+    scales_gpu = torch.tensor(scales_gn.astype(np.float16), dtype=torch.float16, device='cuda')
+    zp_gpu = torch.tensor(zps_gn.astype(np.float16), dtype=torch.float16, device='cuda')
+
+    C_out = t4_kernels.fused_h17_gemv_s3(A_gpu, W_packed_gpu, scales_gpu, zp_gpu)
+    torch.cuda.synchronize()
+
+    assert C_out.shape == (M, N), f"Unexpected output shape: {C_out.shape}"
+    C_gpu_np = C_out.detach().cpu().numpy().astype(np.float32)
+
+    max_abs_diff = float(np.max(np.abs(C_gpu_np - C_ref)))
+    # Same FP16 accumulation envelope (<= 2.0) used for fused_w4a16_gemm in
+    # harness/empirical/expected.yaml. A sign-inversion or layout bug would
+    # blow this gate by ~|C_ref|; FP16 rounding stays well under it.
+    GATE = 2.0
+    print(f"  non-zero GEMV: M={M} K={K} N={N} num_groups={num_groups}")
+    print(f"  max_abs_diff (GPU vs CPU FP16-dequant ref) = {max_abs_diff:.6f}  (gate <= {GATE})")
+    assert max_abs_diff <= GATE, (
+        f"H17 GEMV correctness FAILED: max_abs_diff={max_abs_diff:.4f} > {GATE}")
+    # Guard against a vacuous pass: reference must be non-trivial.
+    assert float(np.max(np.abs(C_ref))) > 1e-3, "Reference output near-zero - test is vacuous"
+    print(f"  [PASS] Live GPU execution + non-vacuous correctness gate. Output shape: {C_out.shape}")
+
+
 def main():
     print("================================================================================")
     print("      RUNNING HYPOTHESIS H17 FUSED INT3 MEGA-KERNEL SUITE")
@@ -427,6 +537,7 @@ def main():
         test_h17_fused_int3_gemv_correctness()
         test_edge_cases()
         test_microbenchmarks_speed_of_light()
+        test_h17_gpu_extension()
         
         print("\n" + "="*80)
         print("ALL TESTS PASSED SUCCESSFULLY! (0 Errors)")
@@ -441,3 +552,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

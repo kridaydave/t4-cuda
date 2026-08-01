@@ -16,7 +16,7 @@ nvcc -arch=sm_75 -Xptxas -v -c research/src/t4_cuda_kernels.cu -o /tmp/t4_cuda_k
 ### Audit Target Metrics:
 - **Registers per Thread**: Enforce target bound $\le 64$ registers/thread to preserve active warp occupancy.
 - **Stack Spills**: Verify `0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads`. Any non-zero spill indicates register pressure or bad buffer indexing.
-- **PTX Instruction Audit**: Verify `lop3.b32` opcodes emitted with constants `0x64046404` (INT3 LUT `0xCA`), `0x64086408` (INT4 LUT `0x6A`), and `0x38003800` (FP8 LUT `0xEA`).
+- **PTX Instruction Audit**: Verify `lop3.b32` opcodes emitted with constants `0x64046404` (INT3 LUT `0x6A`), `0x64086408` (INT4 signed LUT `0x6A`), and `0x64006400` (INT4 unsigned LUT `0xEA`). The FP8 E4M3 path is NO longer a `lop3.b32` op — it uses an integer `ADD` of `0x20002000` (+8 exponent re-bias) + bitwise `OR` with the sign word; audit for `IADD`/`OR` instead (SASS count unmeasured for the committed path).
 
 ---
 

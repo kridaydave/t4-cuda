@@ -84,7 +84,12 @@ __device__ __forceinline__ void lop3_unpack_s3_ptx(
     asm volatile("fma.rn.f16x2 %0, %0, %1, %2;" : "+r"(raw_49) : "r"(scale_32), "r"(neg_bias_1028_32));
 }
 
-// Pure PTX FP8 E4M3 -> FP16 Dequantization (0xFE bitwise OR + exp_bias addition + fma.rn.f16x2)
+// Pure PTX FP8 E4M3 -> FP16 Dequantization (integer ADD exponent re-bias +0x20002000 + bitwise OR + fma.rn.f16x2)
+// NOTE: This is NOT a lop3.b32 path. The earlier 0xFE LOP3 formulation was replaced
+// (commit 8579c27) with an integer ADD of exp_bias (+8 << 10 = 0x2000) into the
+// shifted exponent/mantissa word, then a bitwise OR with the sign word. The 11.0x
+// SASS speedup claim was derived for the old LOP3 formulation and is UNMEASURED for
+// this add+OR path; treat it as a pending measurement, not a verified result.
 __device__ __forceinline__ void lop3_unpack_fp8_ptx(
     uint32_t W,
     uint32_t &raw_01, uint32_t &raw_23,

@@ -14,6 +14,7 @@ setup(
                 os.path.join(src_dir, 'bindings.cpp'),
                 os.path.join(src_dir, 'kernels/lop3_dequant.cu'),
                 os.path.join(src_dir, 'kernels/fused_w4a16_gemm.cu'),
+                os.path.join(src_dir, 'kernels/h17_mega_kernel.cu'),
             ],
             extra_compile_args={
                 'cxx': ['-O3'],

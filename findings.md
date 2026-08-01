@@ -8,9 +8,9 @@ To maintain strict academic and engineering rigor, we categorize these technique
 
 | Technique / Engineering Component | Microarchitectural Mechanism | Target SASS / Hardware Benefit | Originality & Prior Art Context | Validation Status |
 |---|---|---|---|---|
-| **Signed Sub-Byte INT3 Dequant (`LOP3` LUT `0xCA`)** | Dual-word bit extraction + FP16 magic mantissa injection (`0x64046404`) | **3.08x instruction reduction**; 94.8% memory bandwidth efficiency | **Original Contribution**: First single-cycle LOP3 formulation for non-byte aligned INT3 signed weights | Mathematically & Simulation Verified (H7) |
+| **Signed Sub-Byte INT3 Dequant (`LOP3` LUT `0x6A`)** | Dual-word bit extraction + FP16 magic mantissa injection (`0x64046404`) | **3.08x instruction reduction**; 94.8% memory bandwidth efficiency | **Original Contribution**: First single-cycle LOP3 formulation for non-byte aligned INT3 signed weights | Mathematically & Simulation Verified (H7) |
 | **Warp-Specialized Split-K GEMM** | 2 Producer / 6 Consumer warps with SMEM volatile flag signaling | **94.2% stall reduction**; locks 1590 MHz boost clock | **Original Contribution**: Software warp specialization for pre-Ampere GPUs without `CP.ASYNC` | Analytically & Simulation Verified (H8) |
-| **Fused FP8 Emulation via LOP3 Rescaling** | Exponent bias adjustment (+8) via `lop3.b32` LUT `0xEA` | **11.0x instruction reduction**; 60.1 TFLOPS FP8 GEMM on FP16 Tensor Cores | **Original Contribution**: Single-cycle FP8-to-FP16 mantissa rescaling for Turing WMMA | Analytically & Simulation Verified (H9) |
+| **Fused FP8 Emulation via Integer ADD + bitwise OR** | Exponent re-bias (+8 = +0x2000) via integer `ADD` into the shifted exp/mantissa word, then `OR` with the sign word (NOT a `lop3.b32` path) | **11.0x instruction reduction is UNMEASURED for the committed add+OR path** (figure derived for the earlier LOP3 formulation); 60.1 TFLOPS FP8 GEMM on FP16 Tensor Cores (projected) | **Original Contribution**: FP8-to-FP16 re-biasing for Turing WMMA without native FP8 | Analytically Verified; SASS count pending re-measurement (H9) |
 | **Power-Aware Occupancy Cap & Regime Split** | 25% occupancy cap for compute-bound prefill ($M\ge 2048$); 50%–75% for memory-bound decode ($M=1$) | Locks **1590 MHz boost clock** on prefill; maximizes MLP on decode without throttling | **Original Contribution**: Novel power-pacing strategy designed specifically for passively cooled 70W TDP T4 GPUs | Analytically Modeled (H2) |
 | **Fused Backward GEMM + AdamW** | Accumulates $\nabla W$ in register fragments; applies AdamW update directly in-register | **21.4% DRAM bandwidth saving** (28 → 22 B/param) by eliminating $\nabla W$ DRAM writeback | **Original Contribution**: Fused register-level backward GEMM + optimizer scheme for Turing persistent blocks | Simulation Confirmed (H6) |
 | **Signed INT4 Dequant (`LOP3` LUT `0x6A`)** | Single-cycle sign bit 3 inversion + FP16 magic exponent `0x64086408` | **1 SASS cycle**; 2.5$\times$ instruction reduction over `bfe` | **T4 Adaptation of Prior Art**: Extends FP16 magic number insertion (ExLlamaV2, Marlin, AWQ) to signed INT4 | **Empirically Verified on T4 Hardware (H4)** |
@@ -24,14 +24,14 @@ To maintain strict academic and engineering rigor, we categorize these technique
 
 ## 2. Detailed Microarchitectural Discoveries
 
-### A. Hypothesis 7: Sub-Byte INT3 Dequantization (`lop3.b32` LUT `0xCA`)
-INT3 quantization compresses 7B/8B models to **3.15 GB VRAM** (5.33x compression), allowing batch sizes up to $B=32$ at context $S=4096$ on a single 16 GB Tesla T4. By exploiting the mathematical identity $s3 + 4 = \text{sign\_bit\_invert}(s3)$ for two's complement 3-bit signed integers, `lop3.b32` with LUT `0xCA` and constant `0x64046404` extracts 10 elements per 32-bit word in **13 SASS instructions** (vs 40 for naive `bfe.u32`), achieving **94.8% memory bandwidth efficiency** (303.4 GB/s).
+### A. Hypothesis 7: Sub-Byte INT3 Dequantization (`lop3.b32` LUT `0x6A`)
+INT3 quantization compresses 7B/8B models to **3.15 GB VRAM** (5.33x compression), allowing batch sizes up to $B=32$ at context $S=4096$ on a single 16 GB Tesla T4. By exploiting the mathematical identity $s3 + 4 = \text{sign\_bit\_invert}(s3)$ for two's complement 3-bit signed integers, `lop3.b32` with LUT `0x6A` and constant `0x64046404` extracts 10 elements per 32-bit word in **13 SASS instructions** (vs 40 for naive `bfe.u32`), achieving **94.8% memory bandwidth efficiency** (303.4 GB/s).
 
 ### B. Hypothesis 8: Software Warp Specialization & Split-K Memory Pacing
 Because Turing (SM 7.5) lacks hardware `CP.ASYNC` instructions, standard GEMM kernels stall Consumer warps for up to 240 cycles during global memory reads. By partitioning CTA threads into 2 Producer Warps (issuing `LDG.128` reads + LOP3 dequant) and 6 Consumer Warps (executing Tensor Core WMMA), synchronized via fine-grained SMEM volatile flags, memory fetch stalls drop by **94.2%** (down to 14 cycles). Peak power draw stabilizes at **61.4W** (below the 70W cap), locking maximum **1590 MHz boost clocks**.
 
 ### C. Hypothesis 9: Fused FP8 Emulation on Turing FP16 Tensor Cores
-Emulating FP8 (`E4M3`) on pre-Hopper GPUs using software casting incurs 22 SASS instructions per element. Our scheme applies single-cycle LOP3 exponent re-biasing (`LUT 0xEA` with offset `+8`) to convert FP8 values directly into FP16 `half2` registers in **2 SASS instructions**. Transformed registers feed directly into Turing FP16 Tensor Cores (`WMMA.16.8.8`), enabling FP8 weight activation GEMM to run at **60.1 TFLOPS** (2.71x faster than software casting).
+Emulating FP8 (`E4M3`) on pre-Hopper GPUs using software casting incurs 22 SASS instructions per element. Our committed scheme re-biases the FP8 E4M3 exponent by +8 via an integer `ADD` of `0x20002000` into the shifted exponent/mantissa word, then merges the sign bit with a bitwise `OR` (this is NOT a `lop3.b32` path — the earlier single-cycle LOP3 `0xEA` formulation was superseded; see `src/kernels/lop3_dequant.h`). The 11.0x SASS speedup and "2 SASS instructions" figures were derived for that earlier LOP3 formulation and are **UNMEASURED** for the current add+OR path. Transformed registers feed directly into Turing FP16 Tensor Cores (`WMMA.16.8.8`); the 60.1 TFLOPS figure is a roofline projection, not a measured result.
 
 ---
 
@@ -61,7 +61,7 @@ All generated code, benchmarks, research papers, and presentation reports are or
 **Current Gap:** H7 (INT3 LOP3 dequant) and H8 (warp specialization) exist as separate hypotheses but have never been fused. The Marlin kernel architecture demonstrates that fusing dequantization *inside* the GEMM mainloop (not as a separate preprocessing step) eliminates intermediate DRAM traffic entirely.
 
 **Proposed Design:**
-- 2 Producer Warps: Fetch packed INT3 weights via `LDG.E.128`, apply `lop3.b32 LUT 0xCA` with constant `0x64046404` in-register, write FP16 values to double-buffered SMEM.
+- 2 Producer Warps: Fetch packed INT3 weights via `LDG.E.128`, apply `lop3.b32 LUT 0x6A` with constant `0x64046404` in-register, write FP16 values to double-buffered SMEM.
 - 6 Consumer Warps: Execute `WMMA.16.8.8` FP16 Tensor Core operations directly from SMEM.
 - Synchronization: Fine-grained SMEM volatile flag signaling (no `CP.ASYNC` needed on Turing).
 - Target: 2.5-4.5x decode speedup over BitsAndBytes NF4 baseline.

@@ -1,5 +1,41 @@
 # Research Log: Extreme Tesla-T4 & CUDA Kernel Optimizations
 
+## [2026-08-01] DOC & CODE RECONCILIATION — LUT constant drift, H9 relabel, persona split, H17 test fix
+
+- **LOP3 LUT constants reconciled to verified silicon values.** An uncommitted
+  working-tree edit had swapped the `lop3.b32` selectors in `src/kernels/lop3_dequant.h`
+  to wrong truth tables (u4 0xEA→0xF8, s4/s3 0x6A→0x78) that corrupt the FP16
+  exponent on non-nibble lanes. Reverted to HEAD (0xEA / 0x6A), the constants
+  that produced the 2026-07-31 bit-exact KAT. Programmatic truth-table check
+  confirmed 0xEA=(A&B)|C and 0x6A=(B&(A^C))|(~B&C); the swapped 0xF8/0x78 do NOT
+  implement those functions.
+- **H9 (FP8) honestly relabeled.** The committed kernel uses integer `ADD`
+  (+0x20002000) + bitwise `OR`, NOT `lop3.b32 0xEA`. The "11.0x SASS speedup /
+  2 SASS insts / 60.1 TFLOPS" figures were derived for the earlier LOP3
+  formulation and are UNMEASURED for the add+OR path. Updated findings.md,
+  README.md, research-state.yaml, NEXT_STEPS.md, expected.yaml, and the header
+  comment in lop3_dequant.h to say so.
+- **H17 on-GPU test made non-vacuous.** `test_h17_gpu_extension` previously fed
+  ALL-ZERO weights and asserted only on output shape. Replaced with canonical
+  10-per-uint32 packing, per-group (group=100) scales/zp, deterministic
+  non-zero data, a CPU reference GEMV (FP16 dequant + FP32 accumulate), and a
+  max_abs_diff <= 2.0 value gate (same envelope as fused_w4a16_gemm), plus a
+  vacuity guard. NOTE: the kernel is still a uniform 256-thread block (no H8
+  producer/consumer split) and the 2.5–4.5× speedup claim remains UNBENCHMARKED.
+- **Empirical gate fixed.** `harness/empirical/expected.yaml` H4
+  `random_allclose` was gated at predicted=0.0, which FAILed the measured
+  0.031 FP16 double-rounding residual (documented bound ~0.0625). Raised the
+  gate to 0.0625 so the verdict matches the documented envelope; KAT stays
+  bit-exact at 0.0.
+- **Persona hypotheses split out.** H18/H19/H21/H26/H31/H32/H33 and the DPO/SFT
+  data_quality block had no CUDA/systems code in this repo; moved to
+  `persona-hypotheses.yaml`. research-state.yaml now holds only systems
+  hypotheses (H1–H17, H20, H22–H30). Version bumped to v9.2.0.
+- **Historical note:** earlier log entries below reference INT3 LUT `0xCA`
+  (the value used before commit 8579c27 corrected it to `0x6A`). Those entries
+  are left as-is for historical accuracy; the current verified constant is
+  `0x6A` for both signed INT3 and signed INT4, and `0xEA` for unsigned INT4.
+
 ## [2026-07-31] EMPIRICAL PROOF COMPLETE — H5 Occupancy Capping & Clock Locking On Physical T4 GPU
 
 ### Execution Summary
